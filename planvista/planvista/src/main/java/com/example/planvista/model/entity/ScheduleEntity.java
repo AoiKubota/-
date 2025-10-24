@@ -15,6 +15,7 @@ public class ScheduleEntity {
     @Column(name = "id")
     private Integer id;
 
+
     @Column(name = "user_id", nullable = false, length = 10)
     private String userId;
 
@@ -92,4 +93,5 @@ public class ScheduleEntity {
         updatedAt = LocalDateTime.now();
     }
 
+    
 }
