@@ -416,6 +416,9 @@
                     <button class="btn btn-outline-primary me-2" onclick="location.href='/main'">
                         <i class="bi bi-house"></i> メインページ
                     </button>
+                    <button class="btn btn-outline-success me-2" onclick="location.href='/google_calendar_synchronize'">
+                        <i class="bi bi-google"></i> Google同期
+                    </button>
                     <button class="btn btn-outline-info me-2" onclick="location.href='/ai_analysis'">
                         <i class="bi bi-graph-up"></i> AI分析
                     </button>
@@ -639,48 +642,22 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script>
+    <script th:inline="javascript">
         // グローバル変数
         let currentYear = 2025;
         let currentMonth = 9; // 0-indexed (9 = 10月)
         let selectedDate = new Date(2025, 9, 2); // 10/2
         
-        // サンプルデータ
-        const schedules = [
-            {
-                date: '2025-10-02',
-                startHour: 12,
-                startMinute: 0,
-                endHour: 14,
-                endMinute: 0,
-                title: '新商品についての会議',
-                task: '会議',
-                memo: '第3会議室\n会議資料を持っていくのを忘れないこと!'
-            },
-            {
-                date: '2025-10-02',
-                startHour: 16,
-                startMinute: 0,
-                endHour: 17,
-                endMinute: 30,
-                title: '資料作成',
-                task: '資料制作',
-                memo: ''
-            }
-        ];
+        // サーバーから取得した予定データ
+        /*<![CDATA[*/
+        const schedules = /*[[${events}]]*/ [];
+        /*]]>*/
+        const records = [];
         
-        const records = [
-            {
-                date: '2025-10-02',
-                startHour: 14,
-                startMinute: 0,
-                endHour: 16,
-                endMinute: 0,
-                title: '会議',
-                task: '会議',
-                memo: '時間変更'
-            }
-        ];
+        // デバッグ用：データ確認
+        console.log('予定データ:', schedules);
+        console.log('予定の件数:', schedules.length);
+        
         
         // カレンダー生成
         function generateCalendar() {
@@ -760,11 +737,39 @@
                 <div class="day-number">${day}</div>
             `;
             
-            // イベントインジケーター追加（サンプル）
-            if (!isOtherMonth && (day === 2 || day === 9 || day === 10)) {
-                const indicator = document.createElement('div');
-                indicator.className = 'event-indicator';
-                dayElement.appendChild(indicator);
+            // この日付の予定を取得して表示
+            if (!isOtherMonth) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEvents = schedules.filter(s => s.date === dateStr);
+                
+                if (dayEvents.length > 0) {
+                    // 予定インジケーターを追加
+                    const indicator = document.createElement('div');
+                    indicator.className = 'event-indicator';
+                    dayElement.appendChild(indicator);
+                    
+                    // 予定のタイトルを表示（最大2件）
+                    const eventsDiv = document.createElement('div');
+                    eventsDiv.className = 'day-events';
+                    dayEvents.slice(0, 2).forEach(event => {
+                        const eventTitle = document.createElement('div');
+                        eventTitle.style.fontSize = '10px';
+                        eventTitle.style.overflow = 'hidden';
+                        eventTitle.style.textOverflow = 'ellipsis';
+                        eventTitle.style.whiteSpace = 'nowrap';
+                        eventTitle.style.color = '#0d6efd';
+                        eventTitle.textContent = event.title;
+                        eventsDiv.appendChild(eventTitle);
+                    });
+                    if (dayEvents.length > 2) {
+                        const moreText = document.createElement('div');
+                        moreText.style.fontSize = '9px';
+                        moreText.style.color = '#6c757d';
+                        moreText.textContent = `+${dayEvents.length - 2}件`;
+                        eventsDiv.appendChild(moreText);
+                    }
+                    dayElement.appendChild(eventsDiv);
+                }
             }
             
             dayElement.onclick = function() {

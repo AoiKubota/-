@@ -2,27 +2,20 @@ package com.example.planvista.model.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.time.Duration;
 
 @Entity
-@Table(name = "records")
-public class RecordEntity {
+@Table(name = "events")
+public class EventEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(nullable = false)
+    private String title;
     
-    @Column(name = "event_id")
-    private Long eventId;
-    
-    @Column(name = "task_id", nullable = false)
-    private Long taskId;
-    
-    @Column(name = "task_name", nullable = false, length = 100)
-    private String taskName;
+    @Column(columnDefinition = "TEXT")
+    private String description;
     
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
@@ -30,8 +23,14 @@ public class RecordEntity {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
     
-    @Column(name = "memo", columnDefinition = "TEXT")
-    private String memo;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+    
+    @Column(name = "google_event_id")
+    private String googleEventId; // Google CalendarのイベントIDを保存（重複防止用）
+    
+    @Column(name = "is_synced_from_google")
+    private Boolean isSyncedFromGoogle = false; // Googleから同期された予定かどうか
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -49,36 +48,20 @@ public class RecordEntity {
         this.id = id;
     }
     
-    public Long getUserId() {
-        return userId;
+    public String getTitle() {
+        return title;
     }
     
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setTitle(String title) {
+        this.title = title;
     }
     
-    public Long getEventId() {
-        return eventId;
+    public String getDescription() {
+        return description;
     }
     
-    public void setEventId(Long eventId) {
-        this.eventId = eventId;
-    }
-    
-    public Long getTaskId() {
-        return taskId;
-    }
-    
-    public void setTaskId(Long taskId) {
-        this.taskId = taskId;
-    }
-    
-    public String getTaskName() {
-        return taskName;
-    }
-    
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
+    public void setDescription(String description) {
+        this.description = description;
     }
     
     public LocalDateTime getStartTime() {
@@ -97,12 +80,28 @@ public class RecordEntity {
         this.endTime = endTime;
     }
     
-    public String getMemo() {
-        return memo;
+    public Long getUserId() {
+        return userId;
     }
     
-    public void setMemo(String memo) {
-        this.memo = memo;
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+    
+    public String getGoogleEventId() {
+        return googleEventId;
+    }
+    
+    public void setGoogleEventId(String googleEventId) {
+        this.googleEventId = googleEventId;
+    }
+    
+    public Boolean getIsSyncedFromGoogle() {
+        return isSyncedFromGoogle;
+    }
+    
+    public void setIsSyncedFromGoogle(Boolean isSyncedFromGoogle) {
+        this.isSyncedFromGoogle = isSyncedFromGoogle;
     }
     
     public LocalDateTime getCreatedAt() {
@@ -119,13 +118,6 @@ public class RecordEntity {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public long getDurationMinutes() {
-        if (startTime != null && endTime != null) {
-            return Duration.between(startTime, endTime).toMinutes();
-        }
-        return 0;
     }
     
     @PrePersist

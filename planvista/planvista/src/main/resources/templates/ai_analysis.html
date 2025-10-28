@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - PlanVista</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* ヘッダー */
+        header {
+            background-color: #fff;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            border: none;
+            background-color: #4a90e2;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .header-btn:hover {
+            background-color: #357abd;
+        }
+
+        /* メインコンテンツ */
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 28px;
+        }
+
+        /* メイングリッドレイアウト */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* 左側：タスク別所要平均時間 */
+        .left-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 右側：スケジュール正確度 + フィードバック */
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* AI分析セクション */
+        .analysis-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            border-bottom: 2px solid #4a90e2;
+            padding-bottom: 10px;
+        }
+
+        /* タスク別所要平均時間 */
+        .task-section {
+            flex: 1;
+            min-height: 500px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .task-name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .task-time {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+
+        /* スケジュール正確度 */
+        .accuracy-section {
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .accuracy-display {
+            text-align: center;
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .accuracy-value {
+            font-size: 72px;
+            font-weight: bold;
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+
+        .accuracy-label {
+            font-size: 18px;
+            color: #666;
+        }
+
+        /* AIフィードバック */
+        .feedback-section {
+            flex: 1;
+            min-height: 230px;
+        }
+
+        .feedback-content {
+            background-color: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+            line-height: 1.8;
+            font-size: 16px;
+            min-height: 150px;
+        }
+
+        .feedback-content p {
+            margin-bottom: 10px;
+        }
+
+        .feedback-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* エクスポートボタン */
+        .export-section {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .export-btn {
+            padding: 15px 40px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* データ不足メッセージ */
+        .no-data-message {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 18px;
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .task-section {
+                min-height: auto;
+            }
+
+            .accuracy-section,
+            .feedback-section {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .task-item {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .accuracy-value {
+                font-size: 48px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .export-btn {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <a href="/main" class="logo">PlanVista</a>
+        <div class="header-buttons">
+            <a href="/calendar" class="header-btn">📅 カレンダー</a>
+            <a href="/ai_analysis" class="header-btn">🔍 AI分析</a>
+            <a href="/logout" class="header-btn">ログアウト</a>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="container">
+        <h1>AI分析</h1>
+
+        <!-- メイングリッド -->
+        <div class="main-grid">
+            <!-- 左側：タスク別所要平均時間 -->
+            <div class="left-section">
+                <div class="analysis-section task-section">
+                    <div class="section-title">タスク別所要平均時間</div>
+                    <div th:if="${taskAverageTimes != null and !taskAverageTimes.isEmpty()}" class="task-list">
+                        <div th:each="entry : ${taskAverageTimes}" class="task-item">
+                            <span class="task-name" th:text="${entry.key}">会議</span>
+                            <span class="task-time" th:text="${entry.value}">02:00</span>
+                        </div>
+                    </div>
+                    <div th:if="${taskAverageTimes == null or taskAverageTimes.isEmpty()}" class="no-data-message">
+                        データがありません
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：スケジュール正確度 + フィードバック -->
+            <div class="right-section">
+                <!-- スケジュール正確度 -->
+                <div class="analysis-section accuracy-section">
+                    <div class="section-title">スケジュール正確度</div>
+                    <div class="accuracy-display">
+                        <div class="accuracy-value" th:text="${accuracy != null ? accuracy + '%' : '00%'}">00%</div>
+                        <div class="accuracy-label">正確度</div>
+                    </div>
+                </div>
+
+                <!-- AIによるフィードバック -->
+                <div class="analysis-section feedback-section">
+                    <div class="section-title">AIによるフィードバック</div>
+                    <div class="feedback-content">
+                        <p th:if="${feedbacks != null and !feedbacks.isEmpty()}" th:each="feedback : ${feedbacks}" th:text="${feedback}">
+                            メール確認のタスクが想定より長引くことが多いようです。もう少し余裕をもって時間を見積もってみましょう。
+                        </p>
+                        <p th:if="${feedbacks == null or feedbacks.isEmpty()}">
+                            記録されたデータがまだ少ないため、詳細な分析ができません。もっとデータを蓄積してから再度お試しください。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- エクスポートボタン -->
+        <div class="export-section">
+            <a href="/ai_analysis/export" class="export-btn">📄 エクスポート（PDF）</a>
+        </div>
+    </div>
+</body>
+</html>

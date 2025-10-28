@@ -18,24 +18,12 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
     
-    /**
-     * ログインページを表示
-     * @param model モデル
-     * @return ログインページのテンプレート名
-     */
     @GetMapping("/login")
     public String login(Model model) {
         return "login";
     }
     
-    /**
-     * ログイン処理
-     * @param email メールアドレス
-     * @param password パスワード
-     * @param session HTTPセッション
-     * @param redirectAttributes リダイレクト属性
-     * @return リダイレクト先
-     */
+
     @PostMapping("/login")
     public String loginProcess(
             @RequestParam("email") String email,
@@ -44,7 +32,6 @@ public class AuthController {
             RedirectAttributes redirectAttributes) {
         
         try {
-            // メールアドレスでユーザーを検索
             UserEntity user = userRepository.getByEmail(email);
             
             if (user == null) {
@@ -52,14 +39,11 @@ public class AuthController {
                 return "redirect:/login";
             }
             
-            // パスワードの検証（本来はハッシュ化したパスワードで比較）
-            // TODO: Spring Securityを使用してパスワードのハッシュ化と検証を実装
             if (!user.getPassword().equals(password)) {
                 redirectAttributes.addFlashAttribute("error", "メールアドレスまたはパスワードが正しくありません");
                 return "redirect:/login";
             }
             
-            // セッションにユーザー情報を保存
             session.setAttribute("userId", user.getId());
             session.setAttribute("username", user.getUsername());
             session.setAttribute("email", user.getEmail());
@@ -73,27 +57,12 @@ public class AuthController {
             return "redirect:/login";
         }
     }
-    
-    /**
-     * 新規登録ページを表示
-     * @param model モデル
-     * @return 新規登録ページのテンプレート名
-     */
+
     @GetMapping("/signup")
     public String signup(Model model) {
         return "signup";
     }
-    
-    /**
-     * 新規登録処理
-     * @param username ユーザー名
-     * @param email メールアドレス
-     * @param password パスワード
-     * @param passwordConfirm パスワード確認
-     * @param companyId 所属ID
-     * @param redirectAttributes リダイレクト属性
-     * @return リダイレクト先
-     */
+
     @PostMapping("/signup")
     public String signupProcess(
             @RequestParam("username") String username,
@@ -104,7 +73,6 @@ public class AuthController {
             RedirectAttributes redirectAttributes) {
         
         try {
-            // 入力値の検証
             if (username == null || username.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "ユーザー名を入力してください");
                 return "redirect:/signup";
@@ -146,14 +114,11 @@ public class AuthController {
             UserEntity newUser = new UserEntity();
             newUser.setUsername(username);
             newUser.setEmail(email);
-            // TODO: パスワードをハッシュ化して保存
             newUser.setPassword(password);
             newUser.setCompanyId(companyId);
-            
-            // データベースに保存
+
             userRepository.create(newUser);
-            
-            // 登録成功メッセージ
+
             redirectAttributes.addFlashAttribute("success", "アカウントの登録が完了しました。ログインしてください。");
             return "redirect:/login";
             
@@ -164,24 +129,14 @@ public class AuthController {
             return "redirect:/signup";
         }
     }
-    
-    /**
-     * ログアウト処理
-     * @param session HTTPセッション
-     * @return リダイレクト先
-     */
+
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
         session.invalidate();
         redirectAttributes.addFlashAttribute("success", "ログアウトしました");
         return "redirect:/login";
     }
-    
-    /**
-     * パスワード再設定案内ページを表示
-     * @param model モデル
-     * @return パスワード再設定案内ページのテンプレート名
-     */
+
     @GetMapping("/pwd_reset")
     public String passwordReset(Model model) {
         return "pwd_reset";

@@ -20,17 +20,5 @@ public class MainController {
         return "main";  // src/main/resources/templates/main.html を表示
     }
     
-    /**
-     * カレンダーページを表示
-     * @param model モデル
-     * @return カレンダーページのテンプレート名
-     */
-    @GetMapping("/calendar")
-    public String calendar(Model model){
-        // 必要に応じてモデルにデータを追加
-        // 例: model.addAttribute("schedules", scheduleList);
-        
-        return "calendar";  // src/main/resources/templates/calendar.html を表示
-    }
 
 }
