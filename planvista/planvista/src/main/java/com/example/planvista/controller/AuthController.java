@@ -2,6 +2,7 @@ package com.example.planvista.controller;
 
 import com.example.planvista.model.entity.UserEntity;
 import com.example.planvista.repository.UserRepository;
+import com.example.planvista.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,12 +19,14 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private PasswordResetService passwordResetService;
+    
     @GetMapping("/login")
     public String login(Model model) {
         return "login";
     }
     
-
     @PostMapping("/login")
     public String loginProcess(
             @RequestParam("email") String email,
@@ -49,7 +52,6 @@ public class AuthController {
             session.setAttribute("email", user.getEmail());
             session.setAttribute("companyId", user.getCompanyId());
             
-            // ログイン成功
             return "redirect:/main";
             
         } catch (Exception e) {
@@ -88,7 +90,6 @@ public class AuthController {
                 return "redirect:/signup";
             }
             
-            // パスワード確認
             if (!password.equals(passwordConfirm)) {
                 redirectAttributes.addFlashAttribute("error", "パスワードが一致しません");
                 redirectAttributes.addFlashAttribute("username", username);
@@ -96,21 +97,18 @@ public class AuthController {
                 return "redirect:/signup";
             }
             
-            // メールアドレスの重複チェック
             if (userRepository.existsByEmail(email)) {
                 redirectAttributes.addFlashAttribute("error", "このメールアドレスは既に登録されています");
                 redirectAttributes.addFlashAttribute("username", username);
                 return "redirect:/signup";
             }
             
-            // ユーザー名の重複チェック
             if (userRepository.existsByUsername(username)) {
                 redirectAttributes.addFlashAttribute("error", "このユーザー名は既に使用されています");
                 redirectAttributes.addFlashAttribute("email", email);
                 return "redirect:/signup";
             }
             
-            // 新規ユーザーを作成
             UserEntity newUser = new UserEntity();
             newUser.setUsername(username);
             newUser.setEmail(email);
@@ -137,9 +135,110 @@ public class AuthController {
         return "redirect:/login";
     }
 
+    /**
+     * パスワードリセット案内ページ
+     */
     @GetMapping("/pwd_reset")
     public String passwordReset(Model model) {
         return "pwd_reset";
     }
+    
+    /**
+     * パスワードリセットリクエストの処理
+     */
+    @PostMapping("/pwd_reset")
+    public String passwordResetProcess(
+            @RequestParam("email") String email,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            if (email == null || email.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "メールアドレスを入力してください");
+                return "redirect:/pwd_reset";
+            }
+            
+            // パスワードリセットリクエストを処理
+            passwordResetService.requestPasswordReset(email);
+            
+            // セキュリティのため、ユーザーの存在に関わらず成功メッセージを表示
+            redirectAttributes.addFlashAttribute("success", 
+                "パスワードリセット用のメールを送信しました。メールをご確認ください。");
+            return "redirect:/pwd_reset";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "処理中にエラーが発生しました");
+            return "redirect:/pwd_reset";
+        }
+    }
+    
+    /**
+     * パスワードリセットフォームページ
+     */
+    @GetMapping("/pwd_form")
+    public String passwordResetForm(
+            @RequestParam("token") String token,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        
+        // トークンの有効性を確認
+        if (!passwordResetService.validateToken(token)) {
+            redirectAttributes.addFlashAttribute("error", 
+                "無効なリンクまたは期限切れです。再度パスワードリセットを申請してください。");
+            return "redirect:/pwd_reset";
+        }
+        
+        model.addAttribute("token", token);
+        return "pwd_form";
+    }
+    
+    /**
+     * パスワードリセットの実行
+     */
+    @PostMapping("/pwd_form")
+    public String passwordResetFormProcess(
+            @RequestParam("token") String token,
+            @RequestParam("password") String password,
+            @RequestParam("passwordConfirm") String passwordConfirm,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            // パスワードの検証
+            if (password == null || password.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "パスワードを入力してください");
+                redirectAttributes.addFlashAttribute("token", token);
+                return "redirect:/pwd_form?token=" + token;
+            }
+            
+            if (!password.equals(passwordConfirm)) {
+                redirectAttributes.addFlashAttribute("error", "パスワードが一致しません");
+                redirectAttributes.addFlashAttribute("token", token);
+                return "redirect:/pwd_form?token=" + token;
+            }
+            
+            if (password.length() < 6) {
+                redirectAttributes.addFlashAttribute("error", "パスワードは6文字以上で設定してください");
+                redirectAttributes.addFlashAttribute("token", token);
+                return "redirect:/pwd_form?token=" + token;
+            }
+            
+            // パスワードをリセット
+            boolean success = passwordResetService.resetPassword(token, password);
+            
+            if (success) {
+                redirectAttributes.addFlashAttribute("success", 
+                    "パスワードの変更が完了しました。新しいパスワードでログインしてください。");
+                return "redirect:/login";
+            } else {
+                redirectAttributes.addFlashAttribute("error", 
+                    "無効なリンクまたは期限切れです。再度パスワードリセットを申請してください。");
+                return "redirect:/pwd_reset";
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "処理中にエラーが発生しました");
+            return "redirect:/pwd_form?token=" + token;
+        }
+    }
 }
-

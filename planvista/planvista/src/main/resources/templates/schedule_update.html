@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スケジュール変更 - PlanVista</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        header {
+            background-color: #ffffff;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .header-btn:hover {
+            background-color: #45a049;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .time-group {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .time-separator {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .task-add-btn {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .task-add-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        .estimated-time {
+            background-color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+        }
+
+        .estimated-time h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .estimated-time .time-display {
+            font-size: 1.5rem;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .submit-btn {
+            padding: 0.75rem 2rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        .back-btn {
+            padding: 0.75rem 2rem;
+            background-color: #757575;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background-color: #616161;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+
+        .new-task-input {
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .new-task-input input {
+            width: calc(100% - 120px);
+            display: inline-block;
+        }
+
+        .new-task-input button {
+            width: 100px;
+            margin-left: 10px;
+            padding: 0.75rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" onclick="location.href='/main'">PlanVista</div>
+        <div class="header-buttons">
+            <a href="/calendar" class="header-btn">📅 カレンダー</a>
+            <a href="/ai_analysis" class="header-btn">📊 AI分析</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>スケジュール変更</h1>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <form action="/schedule_update" method="post">
+            <input type="hidden" name="scheduleId" th:value="${schedule.id}">
+            
+            <div class="form-group">
+                <label for="scheduleName">スケジュール名 <span style="color: red;">*</span></label>
+                <input type="text" id="scheduleName" name="scheduleName" required 
+                       th:value="${schedule.scheduleName}" placeholder="例: 新商品についての会議">
+            </div>
+
+            <div class="form-group">
+                <label for="date">日付 <span style="color: red;">*</span></label>
+                <input type="date" id="date" name="date" required th:value="${date}">
+            </div>
+
+            <div class="form-group">
+                <label>時間 <span style="color: red;">*</span></label>
+                <div class="time-group">
+                    <input type="time" id="startTime" name="startTime" required th:value="${startTime}">
+                    <span class="time-separator">〜</span>
+                    <input type="time" id="endTime" name="endTime" required th:value="${endTime}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="task">タスク名 <span style="color: red;">*</span></label>
+                <select id="task" name="task" required>
+                    <option value="">選択してください</option>
+                    <option th:each="task : ${tasks}" 
+                            th:value="${task.taskName}" 
+                            th:text="${task.taskName}"
+                            th:selected="${task.taskName == schedule.task}"></option>
+                </select>
+                <button type="button" class="task-add-btn" onclick="showNewTaskInput()">+ 新規のタスク名を作る</button>
+                
+                <div class="new-task-input" id="newTaskInput">
+                    <input type="text" id="newTaskName" placeholder="新しいタスク名を入力">
+                    <button type="button" onclick="addNewTask()">追加</button>
+                </div>
+            </div>
+
+            <div class="estimated-time">
+                <h3>推測される所要時間</h3>
+                <div class="time-display" id="estimatedTime" th:text="${estimatedTime != null ? estimatedTime : '--:--'}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="memo">メモ</label>
+                <textarea id="memo" name="memo" placeholder="任意でメモを入力してください" 
+                          th:text="${schedule.memo}"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="submit-btn">変更</button>
+                <a href="/calendar" class="back-btn">カレンダーページへ戻る</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // ページ読み込み時に推測時間を設定
+        window.addEventListener('DOMContentLoaded', function() {
+            const taskSelect = document.getElementById('task');
+            if (taskSelect.value) {
+                updateEstimatedTime(taskSelect.value);
+            }
+        });
+
+        // タスク選択時に推測時間を取得
+        document.getElementById('task').addEventListener('change', function() {
+            updateEstimatedTime(this.value);
+        });
+
+        function updateEstimatedTime(taskName) {
+            if (taskName) {
+                fetch('/api/estimated_time?taskName=' + encodeURIComponent(taskName))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.estimatedTime) {
+                            document.getElementById('estimatedTime').textContent = data.estimatedTime;
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                document.getElementById('estimatedTime').textContent = '--:--';
+            }
+        }
+
+        // 新規タスク入力欄の表示
+        function showNewTaskInput() {
+            document.getElementById('newTaskInput').style.display = 'block';
+        }
+
+        // 新規タスクの追加
+        function addNewTask() {
+            const taskName = document.getElementById('newTaskName').value.trim();
+            if (!taskName) {
+                alert('タスク名を入力してください');
+                return;
+            }
+
+            fetch('/task_add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'taskName=' + encodeURIComponent(taskName)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // セレクトボックスに追加
+                    const select = document.getElementById('task');
+                    const option = document.createElement('option');
+                    option.value = data.task.taskName;
+                    option.text = data.task.taskName;
+                    option.selected = true;
+                    select.add(option);
+                    
+                    // 入力欄を非表示にしてリセット
+                    document.getElementById('newTaskInput').style.display = 'none';
+                    document.getElementById('newTaskName').value = '';
+                    
+                    // 推測時間を更新
+                    updateEstimatedTime(data.task.taskName);
+                    
+                    alert(data.message);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('タスクの追加に失敗しました');
+            });
+        }
+    </script>
+</body>
+</html>
