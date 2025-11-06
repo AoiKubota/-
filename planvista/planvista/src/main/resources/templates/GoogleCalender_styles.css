@@ -1,0 +1,37 @@
+/* Google同期スケジュール用のスタイル追加 */
+
+/* Google同期スケジュールの背景色を変更 */
+.calendar-item.google-synced {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-left: 4px solid #5a67d8;
+}
+
+/* Google同期スケジュールのホバー効果 */
+.calendar-item.google-synced:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Google同期スケジュール用のバッジ（オプション） */
+.calendar-item.google-synced::after {
+    content: '📅';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* 小さいアイテムの場合はバッジを非表示 */
+.calendar-item.google-synced.small-item::after {
+    display: none;
+}
+
+/* モーダル内の同期メッセージスタイル */
+#syncNote {
+    border-left: 4px solid #667eea;
+    background-color: #f0f4ff;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+}

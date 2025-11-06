@@ -643,19 +643,60 @@
     
     <script th:inline="javascript">
         // グローバル変数
-        let currentYear = 2025;
-        let currentMonth = 9; // 0-indexed (9 = 10月)
-        let selectedDate = new Date(2025, 9, 2); // 10/2
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let selectedDate = new Date();
         
         // サーバーから取得した予定データ
         /*<![CDATA[*/
-        const schedules = /*[[${events}]]*/ [];
+        const eventsData = /*[[${events}]]*/ [];
         /*]]>*/
-        const records = [];
+        
+        // データ処理用の配列
+        let schedules = [];
+        let records = [];
         
         // デバッグ用：データ確認
-        console.log('予定データ:', schedules);
-        console.log('予定の件数:', schedules.length);
+        console.log('=== データ受信確認 ===');
+        console.log('eventsData:', eventsData);
+        console.log('件数:', eventsData ? eventsData.length : 0);
+        
+        // データを処理
+        if (eventsData && eventsData.length > 0) {
+            console.log('=== データ処理開始 ===');
+            eventsData.forEach((item, index) => {
+                console.log(`[${index}] ${item.title} - type: ${item.type}, Google: ${item.isSyncedFromGoogle}`);
+                
+                const processedItem = {
+                    id: item.id,
+                    title: item.title,
+                    date: item.date,
+                    startHour: item.startHour,
+                    startMinute: item.startMinute,
+                    endHour: item.endHour,
+                    endMinute: item.endMinute,
+                    task: item.task || '',
+                    memo: item.memo || '',
+                    isSyncedFromGoogle: item.isSyncedFromGoogle || false,
+                    isSchedule: item.type === 'schedule' || item.type === 'google'
+                };
+                
+                // scheduleとgoogleタイプはschedules配列に追加
+                if (item.type === 'schedule' || item.type === 'google') {
+                    schedules.push(processedItem);
+                } else if (item.type === 'record') {
+                    records.push(processedItem);
+                }
+            });
+            
+            console.log('=== 処理結果 ===');
+            console.log('スケジュール:', schedules.length);
+            console.log('  - 手動:', schedules.filter(s => !s.isSyncedFromGoogle).length);
+            console.log('  - Google:', schedules.filter(s => s.isSyncedFromGoogle).length);
+            console.log('レコード:', records.length);
+        } else {
+            console.warn('eventsDataが空です - サーバーからデータが渡されていません');
+        }
         
         
         // カレンダー生成
@@ -1012,4 +1053,3 @@
         });
     </script>
 </body>
-</html>

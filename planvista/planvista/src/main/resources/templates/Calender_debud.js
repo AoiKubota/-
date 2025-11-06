@@ -1,5 +1,5 @@
 /**
- * PlanVista - Calendar Page JavaScript
+ * PlanVista - Calendar Page JavaScript (デバッグ版)
  * カレンダーページの全機能を管理
  */
 
@@ -20,9 +20,15 @@ function initCalendar() {
     currentMonth = today.getMonth();
     selectedDate = new Date(today);
     
+    console.log('=== カレンダー初期化 ===');
+    console.log('今日の日付:', formatDate(today));
+    
     // Thymeleafから渡されたイベントデータを処理
     if (typeof eventsData !== 'undefined') {
+        console.log('受信した生データ:', eventsData);
         processEventsData(eventsData);
+    } else {
+        console.warn('eventsDataが定義されていません');
     }
     
     generateCalendar();
@@ -37,7 +43,18 @@ function processEventsData(data) {
     schedules = [];
     records = [];
     
-    data.forEach(item => {
+    console.log('=== イベントデータ処理開始 ===');
+    console.log('データ件数:', data.length);
+    
+    data.forEach((item, index) => {
+        console.log(`処理中 [${index}]:`, {
+            id: item.id,
+            title: item.title,
+            type: item.type,
+            isSyncedFromGoogle: item.isSyncedFromGoogle,
+            date: item.date
+        });
+        
         const processedItem = {
             id: item.id,
             title: item.title,
@@ -51,19 +68,44 @@ function processEventsData(data) {
             memo: item.memo || '',
             task: item.task || '',
             isSyncedFromGoogle: item.isSyncedFromGoogle || false,
-            isSchedule: item.type === 'schedule' || item.type === 'google' // 修正: googleタイプもスケジュールとして扱う
+            isSchedule: item.type === 'schedule' || item.type === 'google'
         };
         
-        // 修正: schedule と google タイプの両方をスケジュール配列に追加
+        // schedule と google タイプの両方をスケジュール配列に追加
         if (item.type === 'schedule' || item.type === 'google') {
             schedules.push(processedItem);
+            console.log(`  → スケジュール配列に追加 (Google同期: ${processedItem.isSyncedFromGoogle})`);
         } else if (item.type === 'record') {
             records.push(processedItem);
+            console.log('  → レコード配列に追加');
+        } else {
+            console.warn(`  → 不明なタイプ: ${item.type}`);
         }
     });
     
-    console.log('処理されたスケジュール数:', schedules.length);
-    console.log('処理されたレコード数:', records.length);
+    console.log('=== 処理結果 ===');
+    console.log('スケジュール総数:', schedules.length);
+    console.log('  - 手動登録:', schedules.filter(s => !s.isSyncedFromGoogle).length);
+    console.log('  - Google同期:', schedules.filter(s => s.isSyncedFromGoogle).length);
+    console.log('レコード総数:', records.length);
+    
+    // 日付ごとの内訳を表示
+    const dateGroups = {};
+    schedules.forEach(s => {
+        if (!dateGroups[s.date]) {
+            dateGroups[s.date] = { manual: 0, google: 0 };
+        }
+        if (s.isSyncedFromGoogle) {
+            dateGroups[s.date].google++;
+        } else {
+            dateGroups[s.date].manual++;
+        }
+    });
+    
+    console.log('日付別スケジュール数:');
+    Object.keys(dateGroups).sort().forEach(date => {
+        console.log(`  ${date}: 手動=${dateGroups[date].manual}, Google=${dateGroups[date].google}`);
+    });
 }
 
 /**
@@ -161,6 +203,12 @@ function createDayElement(day, isOtherMonth, isToday, isSelected, date) {
         if (dayEvents.length > 0 || dayRecords.length > 0) {
             const indicator = document.createElement('div');
             indicator.className = 'event-indicator';
+            
+            // デバッグ用: インジケーターに件数を表示
+            if (dayEvents.length > 0) {
+                indicator.title = `スケジュール: ${dayEvents.length}件 (Google: ${dayEvents.filter(e => e.isSyncedFromGoogle).length})`;
+            }
+            
             dayElement.appendChild(indicator);
         }
     }
@@ -200,11 +248,18 @@ function updateDailySchedule() {
     
     const dateStr = formatDate(selectedDate);
     
+    console.log('=== 日次スケジュール更新 ===');
+    console.log('対象日:', dateStr);
+    
     // スケジュールを表示（手動登録とGoogle同期の両方）
     const daySchedules = schedules.filter(s => s.date === dateStr);
-    console.log('表示するスケジュール数 (' + dateStr + '):', daySchedules.length);
+    console.log('この日のスケジュール:', daySchedules.length);
+    console.log('  - 手動登録:', daySchedules.filter(s => !s.isSyncedFromGoogle).length);
+    console.log('  - Google同期:', daySchedules.filter(s => s.isSyncedFromGoogle).length);
     
-    daySchedules.forEach(schedule => {
+    daySchedules.forEach((schedule, index) => {
+        console.log(`表示 [${index}]:`, schedule.title, `(Google: ${schedule.isSyncedFromGoogle})`);
+        
         const item = createCalendarItem(schedule, 'schedule');
         
         // Google同期の場合は視覚的に区別
@@ -221,7 +276,7 @@ function updateDailySchedule() {
 
     // レコードを表示
     const dayRecords = records.filter(r => r.date === dateStr);
-    console.log('表示するレコード数 (' + dateStr + '):', dayRecords.length);
+    console.log('この日のレコード:', dayRecords.length);
     
     dayRecords.forEach(record => {
         const item = createCalendarItem(record, 'record');
@@ -231,6 +286,10 @@ function updateDailySchedule() {
         };
         recordArea.appendChild(item);
     });
+    
+    if (daySchedules.length === 0 && dayRecords.length === 0) {
+        console.log('この日にはスケジュールもレコードもありません');
+    }
 }
 
 /**
