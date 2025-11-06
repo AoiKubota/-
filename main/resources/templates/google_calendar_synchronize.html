@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Googleカレンダー同期 - PlanVista</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .event-list {
+            margin-top: 30px;
+        }
+        .event-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .event-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .event-time {
+            color: #666;
+            margin-top: 5px;
+        }
+        .event-description {
+            margin-top: 10px;
+            color: #555;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Googleカレンダー同期</h1>
+    
+    <div class="success" th:if="${syncedCount != null}">
+        <p th:text="'同期が完了しました: ' + ${syncedCount} + '件の予定を取得しました'"></p>
+    </div>
+    
+    <div class="event-list" th:if="${events != null and !events.isEmpty()}">
+        <h2>取得した予定一覧</h2>
+        <div class="event-item" th:each="event : ${events}">
+            <div class="event-title" th:text="${event.summary}"></div>
+            <div class="event-time">
+                <span th:if="${event.start.dateTime != null}">
+                    開始: <span th:text="${#dates.format(event.start.dateTime.value, 'yyyy/MM/dd HH:mm')}"></span>
+                </span>
+                <span th:if="${event.end.dateTime != null}">
+                    - 終了: <span th:text="${#dates.format(event.end.dateTime.value, 'yyyy/MM/dd HH:mm')}"></span>
+                </span>
+            </div>
+            <div class="event-description" th:if="${event.description != null}" th:text="${event.description}"></div>
+        </div>
+    </div>
+    
+    <div th:if="${events == null or events.isEmpty()}">
+        <p>同期する予定がありませんでした。</p>
+    </div>
+    
+    <a href="/calendar" class="button">カレンダーに戻る</a>
+</body>
+</html>
