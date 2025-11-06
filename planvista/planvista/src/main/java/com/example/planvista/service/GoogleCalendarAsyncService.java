@@ -1,7 +1,6 @@
 package com.example.planvista.service;
 
-import com.example.planvista.model.entity.EventEntity;
-import com.example.planvista.repository.EventRepository;
+import com.example.planvista.model.entity.ScheduleEntity;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +13,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Googleカレンダー非同期同期サービス
+ * GoogleCalendarSyncServiceを非同期で実行
+ */
 @Service
 public class GoogleCalendarAsyncService {
     
@@ -21,7 +24,7 @@ public class GoogleCalendarAsyncService {
     private GoogleCalendarService googleCalendarService;
     
     @Autowired
-    private EventRepository eventRepository;
+    private ScheduleService scheduleService;
     
     /**
      * Googleカレンダーからイベントを非同期で同期する
@@ -43,46 +46,45 @@ public class GoogleCalendarAsyncService {
 
             for (Event event : events) {
                 try {
-                    // 既存チェック
-                    if (event.getId() != null && eventRepository.existsByGoogleEventId(event.getId())) {
+                    // GoogleイベントIDで既存チェック
+                    if (event.getId() != null && scheduleService.getScheduleByGoogleEventId(event.getId()).isPresent()) {
                         System.out.println("既に存在する予定をスキップ: " + event.getSummary());
                         skippedCount++;
                         continue;
                     }
 
-                    // EventEntityの作成
-                    EventEntity planVistaEvent = new EventEntity();
-                    planVistaEvent.setTitle(event.getSummary() != null ? event.getSummary() : "無題");
-                    planVistaEvent.setDescription(event.getDescription());
-                    planVistaEvent.setUserId(userId);
-                    planVistaEvent.setGoogleEventId(event.getId());
-                    planVistaEvent.setIsSyncedFromGoogle(true);
+                    // ScheduleEntityの作成
+                    ScheduleEntity schedule = new ScheduleEntity();
+                    schedule.setTitle(event.getSummary() != null ? event.getSummary() : "無題");
+                    schedule.setMemo(event.getDescription());
+                    schedule.setUserId(userId);
+                    schedule.setIsSyncedFromGoogle(true);
 
                     // 開始時刻の設定
                     EventDateTime start = event.getStart();
                     if (start != null && start.getDateTime() != null) {
                         Instant startInstant = Instant.ofEpochMilli(start.getDateTime().getValue());
-                        planVistaEvent.setStartTime(LocalDateTime.ofInstant(startInstant, ZoneId.systemDefault()));
+                        schedule.setStartTime(LocalDateTime.ofInstant(startInstant, ZoneId.systemDefault()));
                     } else if (start != null && start.getDate() != null) {
                         Instant startInstant = Instant.ofEpochMilli(start.getDate().getValue());
-                        planVistaEvent.setStartTime(LocalDateTime.ofInstant(startInstant, ZoneId.systemDefault()));
+                        schedule.setStartTime(LocalDateTime.ofInstant(startInstant, ZoneId.systemDefault()));
                     }
 
                     // 終了時刻の設定
                     EventDateTime end = event.getEnd();
                     if (end != null && end.getDateTime() != null) {
                         Instant endInstant = Instant.ofEpochMilli(end.getDateTime().getValue());
-                        planVistaEvent.setEndTime(LocalDateTime.ofInstant(endInstant, ZoneId.systemDefault()));
+                        schedule.setEndTime(LocalDateTime.ofInstant(endInstant, ZoneId.systemDefault()));
                     } else if (end != null && end.getDate() != null) {
                         Instant endInstant = Instant.ofEpochMilli(end.getDate().getValue());
-                        planVistaEvent.setEndTime(LocalDateTime.ofInstant(endInstant, ZoneId.systemDefault()));
+                        schedule.setEndTime(LocalDateTime.ofInstant(endInstant, ZoneId.systemDefault()));
                     }
 
-                    // 保存
-                    if (planVistaEvent.getStartTime() != null && planVistaEvent.getEndTime() != null) {
-                        eventRepository.create(planVistaEvent);
+                    // 保存（重複チェック付き）
+                    if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+                        scheduleService.createGoogleSyncedSchedule(schedule, event.getId());
                         syncedCount++;
-                        System.out.println("同期完了: " + planVistaEvent.getTitle());
+                        System.out.println("同期完了: " + schedule.getTitle());
                     }
                     
                 } catch (Exception e) {

@@ -1,8 +1,8 @@
 package com.example.planvista.service;
 
-import com.example.planvista.model.entity.EventEntity;
+import com.example.planvista.model.entity.ScheduleEntity;
 import com.example.planvista.model.entity.RecordEntity;
-import com.example.planvista.repository.EventRepository;
+import com.example.planvista.repository.ScheduleRepository;
 import com.example.planvista.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class AiAnalysisService {
     
     @Autowired
-    private EventRepository eventRepository;
+    private ScheduleRepository scheduleRepository;
     
     @Autowired
     private RecordRepository recordRepository;
@@ -27,16 +27,17 @@ public class AiAnalysisService {
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
         LocalDateTime now = LocalDateTime.now();
         
-        List<EventEntity> events = eventRepository.findByUserIdAndDateRange(userId, threeMonthsAgo, now);
+        // スケジュール（手動登録 + Google同期）を取得
+        List<ScheduleEntity> schedules = scheduleRepository.findByUserIdAndDateRange(userId, threeMonthsAgo, now);
         List<RecordEntity> records = recordRepository.findByUserIdAndDateRange(userId, threeMonthsAgo, now);
 
         Map<String, String> taskAverageTimes = calculateTaskAverageTimes(records);
         result.put("taskAverageTimes", taskAverageTimes);
 
-        double accuracy = calculateScheduleAccuracy(events, records);
+        double accuracy = calculateScheduleAccuracy(schedules, records);
         result.put("accuracy", Math.round(accuracy));
 
-        List<String> feedbacks = generateFeedbacks(events, records, taskAverageTimes, accuracy);
+        List<String> feedbacks = generateFeedbacks(schedules, records, taskAverageTimes, accuracy);
         result.put("feedbacks", feedbacks);
         
         return result;
@@ -65,22 +66,23 @@ public class AiAnalysisService {
         return result;
     }
     
-    private double calculateScheduleAccuracy(List<EventEntity> events, List<RecordEntity> records) {
-        if (events.isEmpty() || records.isEmpty()) {
+    private double calculateScheduleAccuracy(List<ScheduleEntity> schedules, List<RecordEntity> records) {
+        if (schedules.isEmpty() || records.isEmpty()) {
             return 0.0;
         }
         
+        // RecordEntityのscheduleIdでマッピング（eventId → scheduleIdに変更）
         Map<Long, RecordEntity> recordMap = records.stream()
-                .filter(r -> r.getEventId() != null)
-                .collect(Collectors.toMap(RecordEntity::getEventId, r -> r, (r1, r2) -> r1));
+                .filter(r -> r.getScheduleId() != null)
+                .collect(Collectors.toMap(RecordEntity::getScheduleId, r -> r, (r1, r2) -> r1));
         
         int totalComparisons = 0;
         double totalAccuracy = 0.0;
         
-        for (EventEntity event : events) {
-            RecordEntity record = recordMap.get(event.getId());
+        for (ScheduleEntity schedule : schedules) {
+            RecordEntity record = recordMap.get(schedule.getId());
             if (record != null) {
-                long plannedMinutes = Duration.between(event.getStartTime(), event.getEndTime()).toMinutes();
+                long plannedMinutes = Duration.between(schedule.getStartTime(), schedule.getEndTime()).toMinutes();
                 long actualMinutes = record.getDurationMinutes();
                 
                 if (plannedMinutes > 0) {
@@ -95,13 +97,13 @@ public class AiAnalysisService {
         return totalComparisons > 0 ? totalAccuracy / totalComparisons : 0.0;
     }
 
-    private List<String> generateFeedbacks(List<EventEntity> events, List<RecordEntity> records, 
+    private List<String> generateFeedbacks(List<ScheduleEntity> schedules, List<RecordEntity> records, 
                                            Map<String, String> taskAverageTimes, double accuracy) {
         List<String> feedbacks = new ArrayList<>();
 
         if (accuracy < 60) {
             feedbacks.add("スケジュールの正確度が" + Math.round(accuracy) + "%と低めです。" +
-                    "予定時間を実際より20〜30%多めに見積もると、より正確なスケジュールになります。");
+                    "予定時間を実際より20～30%多めに見積もると、より正確なスケジュールになります。");
         } else if (accuracy >= 60 && accuracy < 80) {
             feedbacks.add("スケジュールの正確度は" + Math.round(accuracy) + "%です。" +
                     "良い精度ですが、さらに向上の余地があります。");
@@ -110,7 +112,7 @@ public class AiAnalysisService {
                     "この調子で計画的なスケジュール管理を続けましょう。");
         }
 
-        Map<String, TaskDelayInfo> taskDelays = analyzeTaskDelays(events, records);
+        Map<String, TaskDelayInfo> taskDelays = analyzeTaskDelays(schedules, records);
         for (Map.Entry<String, TaskDelayInfo> entry : taskDelays.entrySet()) {
             TaskDelayInfo info = entry.getValue();
             if (info.delayRate > 0.6 && info.totalCount >= 3) {
@@ -146,17 +148,18 @@ public class AiAnalysisService {
         return feedbacks;
     }
 
-    private Map<String, TaskDelayInfo> analyzeTaskDelays(List<EventEntity> events, List<RecordEntity> records) {
+    private Map<String, TaskDelayInfo> analyzeTaskDelays(List<ScheduleEntity> schedules, List<RecordEntity> records) {
         Map<String, TaskDelayInfo> taskDelays = new HashMap<>();
         
+        // RecordEntityのscheduleIdでマッピング
         Map<Long, RecordEntity> recordMap = records.stream()
-                .filter(r -> r.getEventId() != null)
-                .collect(Collectors.toMap(RecordEntity::getEventId, r -> r, (r1, r2) -> r1));
+                .filter(r -> r.getScheduleId() != null)
+                .collect(Collectors.toMap(RecordEntity::getScheduleId, r -> r, (r1, r2) -> r1));
         
-        for (EventEntity event : events) {
-            RecordEntity record = recordMap.get(event.getId());
+        for (ScheduleEntity schedule : schedules) {
+            RecordEntity record = recordMap.get(schedule.getId());
             if (record != null) {
-                long plannedMinutes = Duration.between(event.getStartTime(), event.getEndTime()).toMinutes();
+                long plannedMinutes = Duration.between(schedule.getStartTime(), schedule.getEndTime()).toMinutes();
                 long actualMinutes = record.getDurationMinutes();
                 long delayMinutes = actualMinutes - plannedMinutes;
                 

@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.Duration;
 
+/**
+ * 作業記録エンティティ
+ * 実際に行った作業の記録を管理
+ */
 @Entity
 @Table(name = "records")
 public class RecordEntity {
@@ -15,8 +19,13 @@ public class RecordEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(name = "event_id")
-    private Long eventId;
+    /**
+     * スケジュールID
+     * どのスケジュールの実績記録かを示す
+     * 旧: event_id → 新: schedule_id
+     */
+    @Column(name = "schedule_id")
+    private Long scheduleId;
     
     @Column(name = "task_id", nullable = false)
     private Long taskId;
@@ -57,12 +66,41 @@ public class RecordEntity {
         this.userId = userId;
     }
     
-    public Long getEventId() {
-        return eventId;
+    /**
+     * スケジュールIDを取得
+     */
+    public Long getScheduleId() {
+        return scheduleId;
     }
     
+    /**
+     * スケジュールIDを設定
+     */
+    public void setScheduleId(Long scheduleId) {
+        this.scheduleId = scheduleId;
+    }
+    
+    /**
+     * レコードIDを取得（idのエイリアス）
+     */
+    public Long getRecordId() {
+        return id;
+    }
+    
+    /**
+     * @deprecated eventIdはscheduleIdに変更されました。getScheduleId()を使用してください。
+     */
+    @Deprecated
+    public Long getEventId() {
+        return scheduleId;
+    }
+    
+    /**
+     * @deprecated eventIdはscheduleIdに変更されました。setScheduleId()を使用してください。
+     */
+    @Deprecated
     public void setEventId(Long eventId) {
-        this.eventId = eventId;
+        this.scheduleId = eventId;
     }
     
     public Long getTaskId() {
@@ -121,6 +159,9 @@ public class RecordEntity {
         this.updatedAt = updatedAt;
     }
 
+    /**
+     * 作業時間（分）を計算
+     */
     public long getDurationMinutes() {
         if (startTime != null && endTime != null) {
             return Duration.between(startTime, endTime).toMinutes();

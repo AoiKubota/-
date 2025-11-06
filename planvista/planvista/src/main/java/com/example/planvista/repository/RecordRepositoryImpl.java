@@ -25,14 +25,14 @@ public class RecordRepositoryImpl implements RecordRepository {
 
     @Override
     public RecordEntity create(RecordEntity record) {
-        String sql = "INSERT INTO records (user_id, event_id, task_id, task_name, start_time, end_time, memo) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO records (user_id, schedule_id, task_id, task_name, start_time, end_time, memo) VALUES (?, ?, ?, ?, ?, ?, ?)";
         
         KeyHolder keyHolder = new GeneratedKeyHolder();
         
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setLong(1, record.getUserId());
-            ps.setObject(2, record.getEventId());
+            ps.setObject(2, record.getScheduleId());
             ps.setLong(3, record.getTaskId());
             ps.setString(4, record.getTaskName());
             ps.setTimestamp(5, Timestamp.valueOf(record.getStartTime()));
@@ -57,6 +57,13 @@ public class RecordRepositoryImpl implements RecordRepository {
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RecordEntity.class), 
                 userId, Timestamp.valueOf(startDate), Timestamp.valueOf(endDate));
     }
+    
+    @Override
+    public List<RecordEntity> findByUserIdAndTaskNameAndDateRange(Long userId, String taskName, LocalDateTime startDate, LocalDateTime endDate) {
+        String sql = "SELECT * FROM records WHERE user_id = ? AND task_name = ? AND start_time >= ? AND start_time < ? ORDER BY start_time ASC";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RecordEntity.class), 
+                userId, taskName, Timestamp.valueOf(startDate), Timestamp.valueOf(endDate));
+    }
 
     @Override
     public List<RecordEntity> findByTaskId(Long taskId) {
@@ -71,10 +78,18 @@ public class RecordRepositoryImpl implements RecordRepository {
     }
 
     @Override
-    public RecordEntity findByEventId(Long eventId) {
-        String sql = "SELECT * FROM records WHERE event_id = ? LIMIT 1";
-        List<RecordEntity> results = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RecordEntity.class), eventId);
+    public RecordEntity findByScheduleId(Long scheduleId) {
+        String sql = "SELECT * FROM records WHERE schedule_id = ? LIMIT 1";
+        List<RecordEntity> results = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RecordEntity.class), scheduleId);
         return results.isEmpty() ? null : results.get(0);
+    }
+    
+    /**
+     * @deprecated eventIdはscheduleIdに変更されました。findByScheduleId()を使用してください。
+     */
+    @Deprecated
+    public RecordEntity findByEventId(Long eventId) {
+        return findByScheduleId(eventId);
     }
 
     @Override
@@ -106,5 +121,22 @@ public class RecordRepositoryImpl implements RecordRepository {
     public List<RecordEntity> findAll() {
         String sql = "SELECT * FROM records ORDER BY start_time DESC";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RecordEntity.class));
+    }
+    
+    @Override
+    public RecordEntity save(RecordEntity record) {
+        if (record.getId() == null) {
+            return create(record);
+        } else {
+            update(record);
+            return record;
+        }
+    }
+    
+    @Override
+    public boolean existsById(Long recordId) {
+        String sql = "SELECT COUNT(*) FROM records WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, recordId);
+        return count != null && count > 0;
     }
 }

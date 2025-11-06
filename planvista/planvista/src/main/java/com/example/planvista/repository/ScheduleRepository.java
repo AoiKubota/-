@@ -4,32 +4,55 @@ import com.example.planvista.model.entity.ScheduleEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
-
+/**
+ * スケジュールリポジトリインターフェース
+ */
 public interface ScheduleRepository {
 
-    List<ScheduleEntity> getAllByUserId(String userId);
-    
+    /**
+     * ユーザーIDで削除されていないスケジュールを全取得
+     */
+    List<ScheduleEntity> findByUserIdAndDeletedAtIsNull(Long userId);
 
-    ScheduleEntity getById(Integer id, String userId);
+    /**
+     * ユーザーIDとスケジュールIDで削除されていないスケジュールを取得
+     */
+    Optional<ScheduleEntity> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
 
-    List<ScheduleEntity> getByScheduleName(String userId, String scheduleName);
+    /**
+     * 期間指定でユーザーのスケジュールを取得
+     */
+    List<ScheduleEntity> findByUserIdAndDateRange(Long userId, LocalDateTime startTime, LocalDateTime endTime);
 
-    List<ScheduleEntity> getByPeriod(String userId, LocalDateTime startDate, LocalDateTime endDate);
+    /**
+     * 手動登録スケジュールのみを取得
+     */
+    List<ScheduleEntity> findManualSchedulesByUserId(Long userId);
 
-    List<ScheduleEntity> getUpcomingSchedules(String userId);
+    /**
+     * Google同期スケジュールのみを取得
+     */
+    List<ScheduleEntity> findGoogleSyncedSchedulesByUserId(Long userId);
 
-    List<ScheduleEntity> getPastSchedules(String userId);
+    /**
+     * GoogleEventIDでスケジュールを検索（重複チェック用）
+     */
+    Optional<ScheduleEntity> findByGoogleEventId(String googleEventId);
 
-    void create(ScheduleEntity schedule);
+    /**
+     * スケジュールを保存
+     */
+    ScheduleEntity save(ScheduleEntity schedule);
 
-    void updateById(Integer scheduleId, ScheduleEntity schedule, String userId);
+    /**
+     * 論理削除
+     */
+    int logicalDeleteById(Long id, Long userId, LocalDateTime deletedAt);
 
-    void deleteById(Integer scheduleId, String userId);
-
-    void logicalDeleteById(Integer scheduleId, String userId);
-
-    List<ScheduleEntity> searchByScheduleName(String userId, String scheduleName);
-    
-    List<ScheduleEntity> searchByTask(String userId, String task);
+    /**
+     * Google同期スケジュールの論理削除（同期解除時）
+     */
+    int logicalDeleteAllGoogleSyncedSchedules(Long userId, LocalDateTime deletedAt);
 }

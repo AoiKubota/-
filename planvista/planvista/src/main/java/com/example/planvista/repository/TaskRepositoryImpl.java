@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class TaskRepositoryImpl implements TaskRepository {
@@ -47,8 +48,12 @@ public class TaskRepositoryImpl implements TaskRepository {
         return results.isEmpty() ? null : results.get(0);
     }
     
+    /**
+     * タスク名とユーザーIDでタスクを検索
+     * ScheduleServiceで使用
+     */
     @Override
-    public TaskEntity findByTaskNameAndUserId(String taskName, Long userId) {
+    public Optional<TaskEntity> findByTaskNameAndUserId(String taskName, Long userId) {
         List<TaskEntity> results = jdbcTemplate.query(
                 "SELECT * FROM " + TaskEntity.TABLE_NAME +
                         " WHERE task_name = ? AND user_id = ?",
@@ -56,7 +61,7 @@ public class TaskRepositoryImpl implements TaskRepository {
                 taskName,
                 userId
         );
-        return results.isEmpty() ? null : results.get(0);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
     
     @Override
@@ -118,6 +123,36 @@ public class TaskRepositoryImpl implements TaskRepository {
                         " WHERE id = ?",
                 id
         );
+    }
+    
+    @Override
+    public TaskEntity save(TaskEntity task) {
+        if (task.getId() == null) {
+            return create(task);
+        } else {
+            update(task);
+            return task;
+        }
+    }
+    
+    @Override
+    public List<TaskEntity> findAll() {
+        return jdbcTemplate.query(
+                "SELECT * FROM " + TaskEntity.TABLE_NAME +
+                        " ORDER BY task_name ASC",
+                new TaskRowMapper()
+        );
+    }
+    
+    @Override
+    public TaskEntity findByTaskName(String taskName) {
+        List<TaskEntity> results = jdbcTemplate.query(
+                "SELECT * FROM " + TaskEntity.TABLE_NAME +
+                        " WHERE task_name = ?",
+                new TaskRowMapper(),
+                taskName
+        );
+        return results.isEmpty() ? null : results.get(0);
     }
     
     private static class TaskRowMapper implements RowMapper<TaskEntity> {

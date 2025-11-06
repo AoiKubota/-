@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メインページ - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+            }
+        
+        /* 日付ヘッダー固定（中央） */
+        .date-header-container {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 100;
+            padding: 15px 0;
+            border-bottom: 2px solid #0d6efd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border-radius: 16px 16px 0 0;
+        }
+        
+        .date-header-container h5 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        /* 左側のカレンダーコンテナ - 丸角を大きく */
+        .calendar-container {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 800px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* スクロール可能なコンテンツラッパー */
+        .calendar-scroll-wrapper {
+            display: flex;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        /* 時間軸 */
+        .time-axis {
+            width: 80px;
+            flex-shrink: 0;
+            border-right: 2px solid #dee2e6;
+        }
+        
+        /* スケジュール欄とレコード欄のコンテナ */
+        .content-container {
+            display: flex;
+            flex: 1;
+        }
+        
+        /* スケジュール欄 */
+        .schedule-column {
+            flex: 1;
+            border-right: 1px solid #dee2e6;
+            position: relative;
+        }
+        
+        /* レコード欄 */
+        .record-column {
+            flex: 1;
+            position: relative;
+        }
+        
+        /* 時間スロット */
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+        
+        .time-label {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 5px 10px;
+            text-align: center;
+            line-height: 50px;
+        }
+        
+        /* カレンダーエリアのベース */
+        .calendar-area {
+            position: relative;
+            min-height: 1440px; /* 24時間 × 60px */
+        }
+        
+        /* 横線（グリッド） */
+        .grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #e9ecef;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* スケジュール・レコードアイテム */
+        .calendar-item {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        
+        /* item-contentにのみoverflowを適用 */
+        .item-content {
+            overflow: hidden;
+        }
+        
+        .schedule-item {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .schedule-item:hover {
+            background-color: #d0e9ff;
+        }
+        
+        .record-item {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .record-item:hover {
+            background-color: #c3e6cb;
+        }
+        
+        /* ホバー時 */
+        .calendar-item:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transform: translateX(2px);
+            z-index: 1000 !important;
+        }
+        
+        /* 小さいアイテム（30分未満）は文字を非表示 */
+        .calendar-item.small-item .item-content {
+            display: none !important;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .item-time {
+            font-size: 11px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* ツールチップ */
+        .item-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            line-height: 1.6;
+        }
+        
+        /* ツールチップの矢印 */
+        .item-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        /* ホバー時にツールチップを表示 */
+        .calendar-item:hover .item-tooltip {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        /* 右側のレコード登録パネル - 上下中央揃え */
+        .record-panel-wrapper {
+            display: flex;
+            align-items: center;
+            height: 800px;
+        }
+        
+        .record-panel {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .current-time {
+            font-size: 48px;
+            font-weight: bold;
+            color: #0d6efd;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .elapsed-time {
+            font-size: 36px;
+            font-weight: bold;
+            color: #198754;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn-start {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: auto;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        /* 記録開始時の表示 */
+        .recording-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .recording-info.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="logo">
+                        <i class="bi bi-calendar-check"></i> PlanVista
+                    </div>
+                </div>
+                <div class="col-md-9 text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/calendar'">
+                        <i class="bi bi-calendar3"></i> カレンダー
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="location.href='/ai_analysis'">
+                        <i class="bi bi-graph-up"></i> AI分析
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-list"></i> メニュー
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                                <i class="bi bi-plus-circle"></i> 新規タスク名登録
+                            </a></li>
+                            <li><a class="dropdown-item" href="/members">
+                                <i class="bi bi-people"></i> チームメンバー一覧
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="bi bi-box-arrow-right"></i> ログアウト
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- 左側：カレンダー表示（スケジュール + レコード） -->
+            <div class="col-md-7">
+                <div class="calendar-container">
+                    <!-- 日付ヘッダー（上部固定） -->
+                    <div class="date-header-container">
+                        <h5>
+                            <i class="bi bi-calendar3"></i>
+                            <span id="currentDate">--/-- ---</span>
+                        </h5>
+                    </div>
+                    
+                    <!-- スクロール可能なコンテンツ -->
+                    <div class="calendar-scroll-wrapper">
+                        <!-- 時間軸 -->
+                        <div class="time-axis">
+                            <div id="timeLabels">
+                                <!-- JavaScriptで生成 -->
+                            </div>
+                        </div>
+                        
+                        <!-- コンテンツ（スケジュール + レコード） -->
+                        <div class="content-container">
+                            <!-- スケジュール欄 -->
+                            <div class="schedule-column">
+                                <div class="calendar-area" id="scheduleArea">
+                                    <!-- JavaScriptでグリッド線とスケジュールを生成 -->
+                                </div>
+                            </div>
+                            
+                            <!-- レコード欄 -->
+                            <div class="record-column">
+                                <div class="calendar-area" id="recordArea">
+                                    <!-- JavaScriptでグリッド線とレコードを生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右側：レコード登録パネル -->
+            <div class="col-md-5">
+                <div class="record-panel-wrapper">
+                    <div class="record-panel">
+                        <!-- 現在時刻表示 -->
+                        <div class="mb-3">
+                            <div class="text-muted mb-1" style="font-size: 14px; font-weight: 500;">
+                                <i class="bi bi-clock"></i> 現在時刻
+                            </div>
+                            <div class="current-time" id="currentTime">00:00</div>
+                        </div>
+                        
+                        <!-- 経過時間表示 -->
+                        <div class="mb-3">
+                            <div class="text-muted mb-1" style="font-size: 14px; font-weight: 500;">
+                                <i class="bi bi-stopwatch"></i> 経過時間
+                            </div>
+                            <div class="elapsed-time" id="elapsedTime">00:00:00</div>
+                        </div>
+                        
+                        <!-- 記録開始時の情報表示 -->
+                        <div class="recording-info" id="recordingInfo">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-record-circle text-danger"></i> 記録中</span>
+                                <span>開始時刻: <strong id="recordingStartTime">00:00</strong></span>
+                            </div>
+                        </div>
+                        
+                        <!-- タスク選択 -->
+                        <div class="mb-3">
+                            <label for="taskSelect" class="form-label">
+                                <i class="bi bi-tag"></i> タスク名
+                            </label>
+                            <select class="form-select" id="taskSelect">
+                                <option value="" selected>タスクを選択してください</option>
+                                <option value="メール確認">メール確認</option>
+                                <option value="会議">会議</option>
+                                <option value="資料制作">資料制作</option>
+                                <option value="洗濯">洗濯</option>
+                            </select>
+                        </div>
+                        
+                        <!-- メモ入力 -->
+                        <div class="mb-3">
+                            <label for="memoText" class="form-label">
+                                <i class="bi bi-pencil"></i> メモ
+                            </label>
+                            <textarea class="form-control" id="memoText" rows="3" placeholder="メモを入力（任意）"></textarea>
+                        </div>
+                        
+                        <!-- 開始/終了ボタン -->
+                        <button type="button" class="btn btn-primary btn-start" id="startStopBtn" onclick="toggleTimer()">
+                            <i class="bi bi-play-fill"></i> 開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- タスク追加モーダル -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTaskModalLabel">
+                        <i class="bi bi-plus-circle"></i> 新規タスク名登録
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newTaskName" class="form-label">タスク名</label>
+                        <input type="text" class="form-control" id="newTaskName" placeholder="新しいタスク名を入力">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewTask()">登録</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スケジュール詳細モーダル -->
+    <div class="modal fade" id="scheduleDetailModal" tabindex="-1" aria-labelledby="scheduleDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleDetailModalLabel">スケジュール名</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>日付</strong>
+                        <p id="scheduleDate" class="mb-0 mt-1">2025/12/12</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>時間</strong>
+                        <p id="scheduleTime" class="mb-0 mt-1">12:00～15:00</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>タスク名</strong>
+                        <p id="scheduleTask" class="mb-0 mt-1">会議</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>メモ</strong>
+                        <p id="scheduleMemo" class="mb-0 mt-1" style="white-space: pre-wrap;">第3会議室
+会議資料を持っていくのを忘れないこと!</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="editSchedule()">編集</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteSchedule()">削除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- レコード詳細モーダル -->
+    <div class="modal fade" id="recordDetailModal" tabindex="-1" aria-labelledby="recordDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recordDetailModalLabel">レコード詳細</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>日付</strong>
+                        <p id="recordDate" class="mb-0 mt-1">2025/12/12</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>時間</strong>
+                        <p id="recordTime" class="mb-0 mt-1">14:00～16:00</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>タスク名</strong>
+                        <p id="recordTask" class="mb-0 mt-1">会議</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>メモ</strong>
+                        <p id="recordMemo" class="mb-0 mt-1" style="white-space: pre-wrap;">時間変更</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>AIによる分析</strong>
+                        <div class="mt-2 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                            <p class="mb-2"><strong>所要時間差異</strong></p>
+                            <p class="mb-1">開始時間: <span id="recordStartDiff" class="text-primary fw-bold">+02:00</span></p>
+                            <p class="mb-1">終了時間: <span id="recordEndDiff" class="text-primary fw-bold">+02:00</span></p>
+                            <p class="mb-0">所要時間: <span id="recordDurationDiff" class="text-success fw-bold">+-00:00</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // グローバル変数
+        let isRunning = false;
+        let startTime = null;
+        let startDateTime = null;
+        let elapsedSeconds = 0;
+        let timerInterval = null;
+        let currentTaskName = '';
+        let currentMemo = '';
+
+        // サンプルスケジュールデータ
+        const schedules = [
+            { startHour: 12, startMinute: 0, endHour: 14, endMinute: 0, title: '会議', memo: '新商品について' },
+            { startHour: 16, startMinute: 0, endHour: 17, endMinute: 30, title: '資料作成', memo: '' }
+        ];
+
+        // サンプルレコードデータ
+        const records = [
+            { startHour: 14, startMinute: 0, endHour: 16, endMinute: 0, title: '会議', memo: '時間変更' }
+        ];
+
+        // 時間ラベルを生成
+        function generateTimeLabels() {
+            const timeLabels = document.getElementById('timeLabels');
+            for (let hour = 0; hour < 24; hour++) {
+                const slot = document.createElement('div');
+                slot.className = 'time-slot';
+                slot.innerHTML = '<div class="time-label">' + String(hour).padStart(2, '0') + ':00</div>';
+                timeLabels.appendChild(slot);
+            }
+        }
+
+        // カレンダーを生成
+        function generateCalendar() {
+            const scheduleArea = document.getElementById('scheduleArea');
+            const recordArea = document.getElementById('recordArea');
+            
+            // エリアをクリア
+            scheduleArea.innerHTML = '';
+            recordArea.innerHTML = '';
+            
+            // グリッド線を生成
+            for (let hour = 0; hour < 24; hour++) {
+                const scheduleGridLine = document.createElement('div');
+                scheduleGridLine.className = 'grid-line';
+                scheduleGridLine.style.top = (hour * 60) + 'px';
+                scheduleArea.appendChild(scheduleGridLine);
+                
+                const recordGridLine = document.createElement('div');
+                recordGridLine.className = 'grid-line';
+                recordGridLine.style.top = (hour * 60) + 'px';
+                recordArea.appendChild(recordGridLine);
+            }
+            
+            // スケジュールアイテムを配置
+            schedules.forEach(function(schedule) {
+                const item = createCalendarItem(schedule, 'schedule');
+                scheduleArea.appendChild(item);
+            });
+            
+            // レコードアイテムを配置
+            records.forEach(function(record) {
+                const item = createCalendarItem(record, 'record');
+                recordArea.appendChild(item);
+            });
+        }
+        
+        // カレンダーアイテムを作成
+        function createCalendarItem(data, type) {
+            const item = document.createElement('div');
+            item.className = 'calendar-item ' + (type === 'schedule' ? 'schedule-item' : 'record-item');
+            
+            // 位置とサイズを計算
+            const startMinutes = data.startHour * 60 + data.startMinute;
+            const endMinutes = data.endHour * 60 + data.endMinute;
+            const duration = endMinutes - startMinutes;
+            
+            const topPosition = (startMinutes / 60) * 60;
+            const height = (duration / 60) * 60;
+            
+            item.style.top = topPosition + 'px';
+            item.style.height = height + 'px';
+            
+            // 時刻のフォーマット
+            const startTime = String(data.startHour).padStart(2, '0') + ':' + String(data.startMinute).padStart(2, '0');
+            const endTime = String(data.endHour).padStart(2, '0') + ':' + String(data.endMinute).padStart(2, '0');
+            
+            // 30分未満（高さ30px未満）の場合は小さいアイテムとして扱う
+            const isSmall = height < 30;
+            if (isSmall) {
+                item.classList.add('small-item');
+            }
+            
+            // ツールチップの内容を作成
+            let tooltipContent = '<strong>' + data.title + '</strong><br>' + startTime + ' ~ ' + endTime;
+            if (data.memo) {
+                tooltipContent += '<br>' + data.memo;
+            }
+            
+            // アイテムの内容（常にツールチップを含める）
+            item.innerHTML = '<div class="item-content">' +
+                           '<div class="item-title">' + data.title + '</div>' +
+                           '<div class="item-time">' + startTime + ' ~ ' + endTime + '</div>' +
+                           '</div>' +
+                           '<div class="item-tooltip">' + tooltipContent + '</div>';
+            
+            // クリックイベント
+            item.onclick = function(e) {
+                e.stopPropagation();
+                if (type === 'schedule') {
+                    showScheduleDetail(data);
+                } else {
+                    showRecordDetail(data);
+                }
+            };
+            
+            return item;
+        }
+        
+        // レコードをカレンダーに追加
+        function addRecordToCalendar(startTime, endTime, taskName, memo) {
+            const record = {
+                startHour: startTime.getHours(),
+                startMinute: startTime.getMinutes(),
+                endHour: endTime.getHours(),
+                endMinute: endTime.getMinutes(),
+                title: taskName,
+                memo: memo
+            };
+            
+            records.push(record);
+            generateCalendar();
+            
+            console.log('レコードを追加しました:', record);
+        }
+
+        // 現在時刻の表示を更新
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = hours + ':' + minutes;
+        }
+
+        // 経過時間の表示を更新
+        function updateElapsedTime() {
+            const hours = String(Math.floor(elapsedSeconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((elapsedSeconds % 3600) / 60)).padStart(2, '0');
+            const seconds = String(elapsedSeconds % 60).padStart(2, '0');
+            document.getElementById('elapsedTime').textContent = hours + ':' + minutes + ':' + seconds;
+        }
+
+        // タイマーの開始/停止
+        function toggleTimer() {
+            const btn = document.getElementById('startStopBtn');
+            const taskSelect = document.getElementById('taskSelect');
+            const recordingInfo = document.getElementById('recordingInfo');
+            const recordingStartTime = document.getElementById('recordingStartTime');
+            
+            if (!isRunning) {
+                if (taskSelect.value === '') {
+                    alert('タスク名を選択してください');
+                    return;
+                }
+                
+                isRunning = true;
+                startTime = Date.now();
+                startDateTime = new Date();
+                currentTaskName = taskSelect.value;
+                currentMemo = document.getElementById('memoText').value;
+                
+                const hours = String(startDateTime.getHours()).padStart(2, '0');
+                const minutes = String(startDateTime.getMinutes()).padStart(2, '0');
+                recordingStartTime.textContent = hours + ':' + minutes;
+                recordingInfo.classList.add('active');
+                
+                btn.innerHTML = '<i class="bi bi-stop-fill"></i> 終了';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+                taskSelect.disabled = true;
+                
+                timerInterval = setInterval(function() {
+                    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                    updateElapsedTime();
+                }, 1000);
+            } else {
+                isRunning = false;
+                clearInterval(timerInterval);
+                const endDateTime = new Date();
+                
+                btn.innerHTML = '<i class="bi bi-play-fill"></i> 開始';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+                taskSelect.disabled = false;
+                recordingInfo.classList.remove('active');
+                
+                addRecordToCalendar(startDateTime, endDateTime, currentTaskName, currentMemo);
+                saveRecord(startDateTime, endDateTime, currentTaskName, currentMemo);
+                
+                document.getElementById('memoText').value = '';
+                document.getElementById('taskSelect').value = '';
+                
+                elapsedSeconds = 0;
+                updateElapsedTime();
+            }
+        }
+
+        // レコードを保存
+        function saveRecord(startTime, endTime, taskName, memo) {
+            const recordData = {
+                task: taskName,
+                memo: memo,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                duration: elapsedSeconds
+            };
+            
+            console.log('Record saved:', recordData);
+            
+            alert('レコードを保存しました\n' +
+                  'タスク: ' + taskName + '\n' +
+                  '開始: ' + formatTime(startTime) + '\n' +
+                  '終了: ' + formatTime(endTime));
+        }
+        
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return hours + ':' + minutes;
+        }
+
+        function addNewTask() {
+            const newTaskName = document.getElementById('newTaskName').value.trim();
+            
+            if (newTaskName === '') {
+                alert('タスク名を入力してください');
+                return;
+            }
+            
+            const taskSelect = document.getElementById('taskSelect');
+            const option = document.createElement('option');
+            option.value = newTaskName;
+            option.textContent = newTaskName;
+            taskSelect.appendChild(option);
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'));
+            modal.hide();
+            
+            document.getElementById('newTaskName').value = '';
+            alert('タスク「' + newTaskName + '」を追加しました');
+        }
+
+        function showScheduleDetail(data) {
+            // モーダルのタイトルを設定
+            document.getElementById('scheduleDetailModalLabel').textContent = data.title;
+            
+            // 日付を設定（現在日付を使用）
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('scheduleDate').textContent = year + '/' + month + '/' + day;
+            
+            // 時間を設定
+            const startTime = String(data.startHour).padStart(2, '0') + ':' + String(data.startMinute).padStart(2, '0');
+            const endTime = String(data.endHour).padStart(2, '0') + ':' + String(data.endMinute).padStart(2, '0');
+            document.getElementById('scheduleTime').textContent = startTime + '～' + endTime;
+            
+            // タスク名を設定
+            document.getElementById('scheduleTask').textContent = data.title;
+            
+            // メモを設定
+            document.getElementById('scheduleMemo').textContent = data.memo || 'メモなし';
+            
+            // モーダルを表示
+            const modal = new bootstrap.Modal(document.getElementById('scheduleDetailModal'));
+            modal.show();
+        }
+
+        function showRecordDetail(data) {
+            // 日付を設定（現在日付を使用）
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('recordDate').textContent = year + '/' + month + '/' + day;
+            
+            // 時間を設定
+            const startTime = String(data.startHour).padStart(2, '0') + ':' + String(data.startMinute).padStart(2, '0');
+            const endTime = String(data.endHour).padStart(2, '0') + ':' + String(data.endMinute).padStart(2, '0');
+            document.getElementById('recordTime').textContent = startTime + '～' + endTime;
+            
+            // タスク名を設定
+            document.getElementById('recordTask').textContent = data.title;
+            
+            // メモを設定
+            document.getElementById('recordMemo').textContent = data.memo || 'メモなし';
+            
+            // AIによる分析データ（仮のデータ）
+            document.getElementById('recordStartDiff').textContent = '+00:00';
+            document.getElementById('recordEndDiff').textContent = '+00:00';
+            document.getElementById('recordDurationDiff').textContent = '+-00:00';
+            
+            // モーダルを表示
+            const modal = new bootstrap.Modal(document.getElementById('recordDetailModal'));
+            modal.show();
+        }
+
+        function editSchedule() {
+            alert('スケジュール編集機能は実装予定です');
+        }
+
+        function deleteSchedule() {
+            if (confirm('このスケジュールを削除しますか?')) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailModal'));
+                modal.hide();
+                alert('スケジュールを削除しました');
+            }
+        }
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const weekday = weekdays[now.getDay()];
+            
+            document.getElementById('currentDate').textContent = month + '/' + day + ' ' + weekday;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTimeLabels();
+            generateCalendar();
+            updateCurrentTime();
+            updateCurrentDate();
+            updateElapsedTime();
+            
+            setInterval(updateCurrentTime, 1000);
+        });
+    </script>
+</body>
+</html>
