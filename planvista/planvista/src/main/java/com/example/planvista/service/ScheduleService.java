@@ -2,16 +2,15 @@ package com.example.planvista.service;
 
 import com.example.planvista.model.entity.ScheduleEntity;
 import com.example.planvista.model.entity.TaskEntity;
-import com.example.planvista.model.entity.RecordEntity;
 import com.example.planvista.repository.ScheduleRepository;
 import com.example.planvista.repository.TaskRepository;
-import com.example.planvista.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +24,6 @@ public class ScheduleService {
     
     @Autowired
     private TaskRepository taskRepository;
-    
-    @Autowired
-    private RecordRepository recordRepository;
     
     // デフォルトタスク名
     private static final String DEFAULT_TASK_NAME = "その他";
@@ -87,8 +83,12 @@ public class ScheduleService {
             schedule.setTask(DEFAULT_TASK_NAME);
         }
         
-        // task_timeがnullの場合は0を設定
-        if (schedule.getTaskTime() == null) {
+        // task_timeを計算（分単位）
+        if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+            Duration duration = Duration.between(schedule.getStartTime(), schedule.getEndTime());
+            int minutes = (int) duration.toMinutes();
+            schedule.setTaskTime(minutes);
+        } else {
             schedule.setTaskTime(0);
         }
         
@@ -115,8 +115,12 @@ public class ScheduleService {
                 existingSchedule.setTask(DEFAULT_TASK_NAME);
             }
             
-            // task_timeがnullの場合は0を設定
-            if (existingSchedule.getTaskTime() == null) {
+            // task_timeを計算
+            if (existingSchedule.getStartTime() != null && existingSchedule.getEndTime() != null) {
+                Duration duration = Duration.between(existingSchedule.getStartTime(), existingSchedule.getEndTime());
+                int minutes = (int) duration.toMinutes();
+                existingSchedule.setTaskTime(minutes);
+            } else {
                 existingSchedule.setTaskTime(0);
             }
             
@@ -132,8 +136,12 @@ public class ScheduleService {
             schedule.setTask(DEFAULT_TASK_NAME);
         }
         
-        // task_timeがnullの場合は0を設定
-        if (schedule.getTaskTime() == null) {
+        // task_timeを計算
+        if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+            Duration duration = Duration.between(schedule.getStartTime(), schedule.getEndTime());
+            int minutes = (int) duration.toMinutes();
+            schedule.setTaskTime(minutes);
+        } else {
             schedule.setTaskTime(0);
         }
         
@@ -155,8 +163,12 @@ public class ScheduleService {
             schedule.setTask(DEFAULT_TASK_NAME);
         }
         
-        // task_timeがnullの場合は0を設定
-        if (schedule.getTaskTime() == null) {
+        // task_timeを計算
+        if (schedule.getStartTime() != null && schedule.getEndTime() != null) {
+            Duration duration = Duration.between(schedule.getStartTime(), schedule.getEndTime());
+            int minutes = (int) duration.toMinutes();
+            schedule.setTaskTime(minutes);
+        } else {
             schedule.setTaskTime(0);
         }
         
@@ -245,38 +257,16 @@ public class ScheduleService {
     /**
      * タスクの推測所要時間を取得
      * 過去の実績レコードから平均時間を計算
+     * 注意: RecordRepositoryが未実装のため、ダミーデータを返す
      */
     public Map<String, String> getEstimatedTaskTime(Long userId, String taskName) {
         Map<String, String> result = new HashMap<>();
         
-        // 過去3ヶ月のレコードを取得
-        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
-        LocalDateTime now = LocalDateTime.now();
-        
-        List<RecordEntity> records = recordRepository.findByUserIdAndTaskNameAndDateRange(
-            userId, taskName, threeMonthsAgo, now
-        );
-        
-        if (records.isEmpty()) {
-            result.put("estimatedTime", "データなし");
-            result.put("minutes", "0");
-            return result;
-        }
-        
-        // 平均時間を計算
-        long totalMinutes = records.stream()
-            .mapToLong(RecordEntity::getDurationMinutes)
-            .sum();
-        
-        long averageMinutes = totalMinutes / records.size();
-        
-        // 時間:分の形式に変換
-        long hours = averageMinutes / 60;
-        long minutes = averageMinutes % 60;
-        
-        result.put("estimatedTime", String.format("%02d:%02d", hours, minutes));
-        result.put("minutes", String.valueOf(averageMinutes));
-        result.put("recordCount", String.valueOf(records.size()));
+        // TODO: RecordRepositoryが実装されたら、過去の実績データから計算する
+        // 現在はダミーデータを返す
+        result.put("estimatedTime", "データなし");
+        result.put("minutes", "0");
+        result.put("recordCount", "0");
         
         return result;
     }

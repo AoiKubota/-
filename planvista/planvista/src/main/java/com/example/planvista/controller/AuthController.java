@@ -22,11 +22,13 @@ public class AuthController {
     @Autowired
     private PasswordResetService passwordResetService;
     
+    // 通常ログイン画面
     @GetMapping("/login")
     public String login(Model model) {
         return "login";
     }
     
+    // 通常ログイン処理
     @PostMapping("/login")
     public String loginProcess(
             @RequestParam("email") String email,
@@ -51,6 +53,7 @@ public class AuthController {
             session.setAttribute("username", user.getUsername());
             session.setAttribute("email", user.getEmail());
             session.setAttribute("companyId", user.getCompanyId());
+            session.setAttribute("isAdmin", false); // 通常ユーザー
             
             return "redirect:/main";
             
@@ -59,6 +62,73 @@ public class AuthController {
             return "redirect:/login";
         }
     }
+
+    // ============================================
+    // 管理者ログイン機能
+    // ============================================
+    
+    /**
+     * 管理者ログイン画面
+     */
+    @GetMapping("/login_admin")
+    public String loginAdmin(Model model) {
+        return "login_admin";
+    }
+    
+    /**
+     * 管理者ログイン処理
+     */
+    @PostMapping("/login_admin")
+    public String loginAdminProcess(
+            @RequestParam("companyId") String companyId,
+            @RequestParam("password") String password,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            // 所属コードの検証
+            if (companyId == null || companyId.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "所属コードを入力してください");
+                return "redirect:/login_admin";
+            }
+            
+            // パスワードの検証
+            if (password == null || password.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "パスワードを入力してください");
+                return "redirect:/login_admin";
+            }
+            
+            // 管理者パスワードの検証
+            // TODO: 本番環境では環境変数やデータベースから取得すること
+            String ADMIN_PASSWORD = "admin123";
+            
+            if (!password.equals(ADMIN_PASSWORD)) {
+                redirectAttributes.addFlashAttribute("error", "所属コードまたはパスワードが正しくありません");
+                return "redirect:/login_admin";
+            }
+            
+            // セッションに管理者情報を保存
+            session.setAttribute("adminCompanyId", companyId);
+            session.setAttribute("isAdmin", true);
+            session.setAttribute("adminLoginTime", System.currentTimeMillis());
+            
+            // 一時的に /main にリダイレクト（/all_users が実装されるまで）
+            redirectAttributes.addFlashAttribute("success", "管理者としてログインしました");
+            return "redirect:/main";
+            
+            // TODO: /all_users ページが実装されたら以下に変更
+            // return "redirect:/all_users";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "ログイン処理中にエラーが発生しました: " + e.getMessage());
+            return "redirect:/login_admin";
+        }
+    }
+
+    // ============================================
+    // 新規登録機能
+    // ============================================
 
     @GetMapping("/signup")
     public String signup(Model model) {
@@ -128,12 +198,31 @@ public class AuthController {
         }
     }
 
+    // ============================================
+    // ログアウト機能
+    // ============================================
+
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
+        // 管理者かどうかをチェック
+        Boolean isAdmin = (Boolean) session.getAttribute("isAdmin");
+        
         session.invalidate();
+        
         redirectAttributes.addFlashAttribute("success", "ログアウトしました");
+        
+        // 管理者の場合は管理者ログインページへ
+        if (isAdmin != null && isAdmin) {
+            return "redirect:/login_admin";
+        }
+        
+        // 通常ユーザーの場合は通常ログインページへ
         return "redirect:/login";
     }
+
+    // ============================================
+    // パスワードリセット機能
+    // ============================================
 
     /**
      * パスワードリセット案内ページ

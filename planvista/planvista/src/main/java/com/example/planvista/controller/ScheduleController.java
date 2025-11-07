@@ -69,10 +69,19 @@ public class ScheduleController {
                 return "redirect:/login";
             }
 
+            System.out.println("=== スケジュール登録開始 ===");
+            System.out.println("userId: " + userId);
+            System.out.println("scheduleName: " + scheduleName);
+            System.out.println("date: " + date);
+            System.out.println("startTime: " + startTime);
+            System.out.println("endTime: " + endTime);
+            System.out.println("task: " + task);
+            System.out.println("memo: " + memo);
+
             // スケジュールエンティティを作成
             ScheduleEntity schedule = new ScheduleEntity();
             schedule.setUserId(userId);
-            schedule.setTitle(scheduleName); // schedule_name → title に変更
+            schedule.setTitle(scheduleName);
             schedule.setTask(task);
             
             // 日時を解析
@@ -90,12 +99,16 @@ public class ScheduleController {
             }
 
             // スケジュールを保存（手動登録）
-            scheduleService.createManualSchedule(schedule);
+            ScheduleEntity savedSchedule = scheduleService.createManualSchedule(schedule);
+            System.out.println("保存されたスケジュールID: " + savedSchedule.getId());
+            System.out.println("=== スケジュール登録完了 ===");
 
             redirectAttributes.addFlashAttribute("success", "スケジュールを登録しました");
             return "redirect:/calendar";
 
         } catch (Exception e) {
+            System.err.println("スケジュール登録エラー: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "スケジュールの登録に失敗しました: " + e.getMessage());
             return "redirect:/schedule_add";
         }
@@ -183,7 +196,7 @@ public class ScheduleController {
             }
 
             // スケジュール情報を更新
-            schedule.setTitle(scheduleName); // schedule_name → title に変更
+            schedule.setTitle(scheduleName);
             schedule.setTask(task);
             
             // 日時を解析
