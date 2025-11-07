@@ -112,12 +112,9 @@ public class AuthController {
             session.setAttribute("isAdmin", true);
             session.setAttribute("adminLoginTime", System.currentTimeMillis());
             
-            // 一時的に /main にリダイレクト（/all_users が実装されるまで）
+            // 管理者専用ページにリダイレクト
             redirectAttributes.addFlashAttribute("success", "管理者としてログインしました");
-            return "redirect:/main";
-            
-            // TODO: /all_users ページが実装されたら以下に変更
-            // return "redirect:/all_users";
+            return "redirect:/all_users";
             
         } catch (Exception e) {
             e.printStackTrace();

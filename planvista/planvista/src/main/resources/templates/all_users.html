@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>すべてのユーザー一覧 - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #434343;
+            text-decoration: none;
+        }
+        
+        .admin-badge {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .main-container {
+            margin-top: 80px;
+            padding: 30px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .page-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .search-box {
+            background-color: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .table-container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn-sort {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 0;
+            transition: color 0.3s;
+        }
+        
+        .btn-sort:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
+        .btn-sort.active {
+            color: #dc3545;
+            font-weight: 700;
+        }
+        
+        .user-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .user-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 50px 0;
+            font-size: 18px;
+        }
+        
+        .search-input {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px 15px;
+            transition: border-color 0.3s;
+        }
+        
+        .search-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .btn-search {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="/main" class="logo">
+                <i class="bi bi-calendar-check"></i> PlanVista
+                <span class="admin-badge">管理者専用</span>
+            </a>
+            <a href="/logout" class="logout-btn">
+                <i class="bi bi-box-arrow-right"></i> ログアウト
+            </a>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="container main-container">
+        <h1 class="page-title">
+            <i class="bi bi-people-fill"></i> すべてのユーザー一覧
+        </h1>
+        <p class="page-subtitle">システムに登録されているすべてのユーザーの情報を確認できます</p>
+        
+        <!-- エラー・成功メッセージ -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <!-- 検索ボックス -->
+        <div class="search-box">
+            <form action="/all_users" method="get" class="row g-3">
+                <div class="col-md-9">
+                    <label for="keyword" class="form-label">
+                        <i class="bi bi-search"></i> キーワード検索
+                    </label>
+                    <input type="text" 
+                           class="form-control search-input" 
+                           id="keyword" 
+                           name="keyword" 
+                           th:value="${keyword}"
+                           placeholder="ユーザー名、メールアドレス、所属IDで検索">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-search w-100">
+                        <i class="bi bi-search"></i> 検索
+                    </button>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check"></i> 
+                        管理者コード: <strong th:text="${adminCode}"></strong> でログイン中
+                    </small>
+                </div>
+            </form>
+        </div>
+        
+        <!-- ユーザー一覧テーブル -->
+        <div class="table-container">
+            <div th:if="${users != null && !users.isEmpty()}">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a th:href="@{/all_users(sort='username', keyword=${keyword})}" 
+                                   class="btn-sort"
+                                   th:classappend="${currentSort == 'username'} ? 'active' : ''">
+                                    <i class="bi bi-person-fill"></i> ユーザー名
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </a>
+                            </th>
+                            <th>
+                                <i class="bi bi-building"></i> 所属ID
+                            </th>
+                            <th>
+                                <i class="bi bi-envelope"></i> メールアドレス
+                            </th>
+                            <th>
+                                <a th:href="@{/all_users(sort='created_at', keyword=${keyword})}" 
+                                   class="btn-sort"
+                                   th:classappend="${currentSort == 'created_at'} ? 'active' : ''">
+                                    <i class="bi bi-calendar-plus"></i> 登録日
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </a>
+                            </th>
+                            <th>
+                                <a th:href="@{/all_users(sort='last_login', keyword=${keyword})}" 
+                                   class="btn-sort"
+                                   th:classappend="${currentSort == 'last_login'} ? 'active' : ''">
+                                    <i class="bi bi-clock-history"></i> 最終ログイン
+                                    <i class="bi bi-arrow-down-up"></i>
+                                </a>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}">
+                            <td>
+                                <a th:href="@{/user_history/{id}(id=${user.id})}" 
+                                   class="user-link">
+                                    <i class="bi bi-person-circle"></i>
+                                    <span th:text="${user.username}"></span>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary" th:text="${user.companyId}"></span>
+                            </td>
+                            <td>
+                                <small class="text-muted" th:text="${user.email}"></small>
+                            </td>
+                            <td th:text="${#temporals.format(user.createdAt, 'yyyy/MM/dd')}"></td>
+                            <td>
+                                <span th:if="${lastLoginMap.get(user.id) != null}"
+                                      th:text="${#temporals.format(lastLoginMap.get(user.id), 'yyyy/MM/dd HH:mm')}">
+                                </span>
+                                <span th:if="${lastLoginMap.get(user.id) == null}"
+                                      class="text-muted">
+                                    <i class="bi bi-dash-circle"></i> ログイン履歴なし
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-3 text-end text-muted">
+                    <small>
+                        <i class="bi bi-info-circle"></i> 
+                        合計 <strong th:text="${users.size()}"></strong> 人のユーザー
+                    </small>
+                </div>
+            </div>
+            
+            <div th:if="${users == null || users.isEmpty()}" class="no-data">
+                <i class="bi bi-inbox" style="font-size: 48px;"></i>
+                <p>ユーザーが見つかりません</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
