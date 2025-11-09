@@ -22,7 +22,11 @@ function initCalendar() {
     
     // Thymeleafから渡されたイベントデータを処理
     if (typeof eventsData !== 'undefined') {
+        console.log('=== イベントデータ受信 ===');
+        console.log('eventsData:', eventsData);
         processEventsData(eventsData);
+    } else {
+        console.warn('eventsDataが定義されていません');
     }
     
     generateCalendar();
@@ -51,10 +55,14 @@ function processEventsData(data) {
             memo: item.memo || '',
             task: item.task || '',
             isSyncedFromGoogle: item.isSyncedFromGoogle || false,
-            isSchedule: item.type === 'schedule' || item.type === 'google' // 修正: googleタイプもスケジュールとして扱う
+            editable: item.editable !== undefined ? item.editable : true,
+            deletable: item.deletable !== undefined ? item.deletable : true,
+            isSchedule: item.type === 'schedule' || item.type === 'google'
         };
         
-        // 修正: schedule と google タイプの両方をスケジュール配列に追加
+        console.log('処理中のアイテム:', processedItem);
+        
+        // schedule と google タイプの両方をスケジュール配列に追加
         if (item.type === 'schedule' || item.type === 'google') {
             schedules.push(processedItem);
         } else if (item.type === 'record') {
@@ -214,6 +222,7 @@ function updateDailySchedule() {
         
         item.onclick = function(e) {
             e.stopPropagation();
+            console.log('スケジュールクリック:', schedule);
             showScheduleDetails(schedule);
         };
         scheduleArea.appendChild(item);
@@ -291,37 +300,69 @@ function nextDay() {
  * スケジュール詳細モーダルを表示
  */
 function showScheduleDetails(schedule) {
+    console.log('=== showScheduleDetails 呼び出し ===');
+    console.log('schedule:', schedule);
+    
     const modalElement = document.getElementById('scheduleDetailModal');
     if (!modalElement) {
         console.error('Modal element not found!');
+        alert('エラー: モーダル要素が見つかりません');
         return;
     }
 
     // タイトルにGoogle同期の場合は表示
     let titleText = schedule.title;
     if (schedule.isSyncedFromGoogle) {
-        titleText += ' 📅'; // Googleカレンダーアイコン
+        titleText += ' 📅';
     }
     
-    document.getElementById('modal-title').textContent = titleText;
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = titleText;
+    } else {
+        console.warn('modal-title要素が見つかりません');
+    }
+    
     document.getElementById('scheduleDate').textContent = schedule.date;
     document.getElementById('scheduleTime').textContent = 
         `${schedule.startTime} ~ ${schedule.endTime}`;
     document.getElementById('scheduleTask').textContent = schedule.task || 'なし';
     document.getElementById('scheduleMemo').textContent = schedule.memo || 'なし';
     
+    // currentScheduleIdを設定
     currentScheduleId = schedule.id;
     currentIsSchedule = schedule.isSchedule;
+    
+    console.log('currentScheduleId設定:', currentScheduleId);
+    console.log('currentIsSchedule設定:', currentIsSchedule);
  
     const btnEdit = document.getElementById('btnEditSchedule');
     const btnDelete = document.getElementById('btnDeleteSchedule');
     
+    if (!btnEdit || !btnDelete) {
+        console.error('編集・削除ボタンが見つかりません!');
+        alert('エラー: ボタン要素が見つかりません');
+        return;
+    }
+    
     // 手動登録スケジュールのみ編集・削除可能（Google同期は不可）
-    if (schedule.isSchedule && !schedule.isSyncedFromGoogle) {
+    const canEdit = schedule.editable !== undefined ? schedule.editable : 
+                    (schedule.isSchedule && !schedule.isSyncedFromGoogle);
+    const canDelete = schedule.deletable !== undefined ? schedule.deletable :
+                      (schedule.isSchedule && !schedule.isSyncedFromGoogle);
+    
+    console.log('編集可能:', canEdit);
+    console.log('削除可能:', canDelete);
+    
+    if (canEdit) {
         btnEdit.style.display = 'inline-block';
-        btnDelete.style.display = 'inline-block';
     } else {
         btnEdit.style.display = 'none';
+    }
+    
+    if (canDelete) {
+        btnDelete.style.display = 'inline-block';
+    } else {
         btnDelete.style.display = 'none';
     }
     
@@ -342,6 +383,7 @@ function showScheduleDetails(schedule) {
         syncNote.style.display = 'none';
     }
 
+    console.log('モーダルを表示します');
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
 }
@@ -350,16 +392,31 @@ function showScheduleDetails(schedule) {
  * スケジュールを編集
  */
 function editSchedule() {
-    if (currentScheduleId) {
-        window.location.href = `/schedule_update?id=${currentScheduleId}`;
+    console.log('=== editSchedule 呼び出し ===');
+    console.log('currentScheduleId:', currentScheduleId);
+    
+    if (!currentScheduleId) {
+        alert('エラー: スケジュールIDが設定されていません');
+        console.error('currentScheduleIdがnullです');
+        return;
     }
+    
+    const url = `/schedule_update?id=${currentScheduleId}`;
+    console.log('遷移先URL:', url);
+    window.location.href = url;
 }
 
 /**
  * スケジュールを削除
  */
 function deleteSchedule() {
-    if (!currentScheduleId) return;
+    console.log('=== deleteSchedule 呼び出し ===');
+    console.log('currentScheduleId:', currentScheduleId);
+    
+    if (!currentScheduleId) {
+        alert('エラー: スケジュールIDが設定されていません');
+        return;
+    }
     
     if (confirm('このスケジュールを削除しますか?')) {
         const form = document.createElement('form');
@@ -373,6 +430,8 @@ function deleteSchedule() {
         
         form.appendChild(input);
         document.body.appendChild(form);
+        
+        console.log('削除フォームを送信します');
         form.submit();
     }
 }
@@ -414,5 +473,6 @@ function addNewTask() {
 
 // DOMContentLoaded時の初期化
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOMContentLoaded ===');
     initCalendar();
 });

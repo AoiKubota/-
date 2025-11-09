@@ -201,6 +201,12 @@
             border: 1px solid #4caf50;
         }
 
+        .alert-warning {
+            background-color: #fff3e0;
+            color: #e65100;
+            border: 1px solid #fb8c00;
+        }
+
         .new-task-input {
             display: none;
             margin-top: 0.5rem;
@@ -221,6 +227,14 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        .new-task-input button:hover {
+            background-color: #45a049;
+        }
+
+        .required {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -235,25 +249,34 @@
     <div class="container">
         <h1>スケジュール変更</h1>
 
+        <!-- エラーメッセージ -->
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <!-- 成功メッセージ -->
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <!-- Google同期スケジュールの警告 -->
+        <div th:if="${schedule.isSyncedFromGoogle}" class="alert alert-warning">
+            ⚠️ このスケジュールはGoogleカレンダーから同期されています。編集はできません。
+        </div>
 
         <form action="/schedule_update" method="post">
             <input type="hidden" name="scheduleId" th:value="${schedule.id}">
             
             <div class="form-group">
-                <label for="scheduleName">スケジュール名 <span style="color: red;">*</span></label>
+                <label for="scheduleName">スケジュール名 <span class="required">*</span></label>
                 <input type="text" id="scheduleName" name="scheduleName" required 
-                       th:value="${schedule.scheduleName}" placeholder="例: 新商品についての会議">
+                       th:value="${schedule.title}" placeholder="例: 新商品についての会議"
+                       maxlength="255">
             </div>
 
             <div class="form-group">
-                <label for="date">日付 <span style="color: red;">*</span></label>
+                <label for="date">日付 <span class="required">*</span></label>
                 <input type="date" id="date" name="date" required th:value="${date}">
             </div>
 
             <div class="form-group">
-                <label>時間 <span style="color: red;">*</span></label>
+                <label>時間 <span class="required">*</span></label>
                 <div class="time-group">
                     <input type="time" id="startTime" name="startTime" required th:value="${startTime}">
                     <span class="time-separator">〜</span>
@@ -262,7 +285,7 @@
             </div>
 
             <div class="form-group">
-                <label for="task">タスク名 <span style="color: red;">*</span></label>
+                <label for="task">タスク名 <span class="required">*</span></label>
                 <select id="task" name="task" required>
                     <option value="">選択してください</option>
                     <option th:each="task : ${tasks}" 
@@ -273,7 +296,7 @@
                 <button type="button" class="task-add-btn" onclick="showNewTaskInput()">+ 新規のタスク名を作る</button>
                 
                 <div class="new-task-input" id="newTaskInput">
-                    <input type="text" id="newTaskName" placeholder="新しいタスク名を入力">
+                    <input type="text" id="newTaskName" placeholder="新しいタスク名を入力" maxlength="100">
                     <button type="button" onclick="addNewTask()">追加</button>
                 </div>
             </div>
@@ -296,11 +319,37 @@
         </form>
     </div>
 
-
     <!-- 共通JavaScript -->
     <script src="/js/common.js"></script>
     
     <!-- スケジュールフォーム専用JavaScript -->
     <script src="/js/schedule-form.js"></script>
+
+    <script>
+        // フォーム送信前のバリデーション
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const date = document.getElementById('date').value;
+            
+            if (!date || !startTime || !endTime) {
+                e.preventDefault();
+                alert('必須項目をすべて入力してください');
+                return false;
+            }
+            
+            // 開始時刻と終了時刻の比較
+            const start = new Date(date + 'T' + startTime);
+            const end = new Date(date + 'T' + endTime);
+            
+            if (end <= start) {
+                e.preventDefault();
+                alert('終了時刻は開始時刻より後に設定してください');
+                return false;
+            }
+            
+            return true;
+        });
+    </script>
 </body>
 </html>

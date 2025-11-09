@@ -38,7 +38,7 @@ public class PasswordResetService {
     @Transactional
     public boolean requestPasswordReset(String email) {
         // ユーザーが存在するか確認
-        UserEntity user = userRepository.getByEmail(email);
+        UserEntity user = userRepository.findByEmail(email);
         if (user == null) {
             // セキュリティのため、ユーザーが存在しない場合も成功を返す
             return true;
@@ -100,14 +100,15 @@ public class PasswordResetService {
         }
         
         // ユーザーを検索
-        UserEntity user = userRepository.getByEmail(resetToken.getEmail());
+        UserEntity user = userRepository.findByEmail(resetToken.getEmail());
         if (user == null) {
             return false;
         }
         
         // パスワードを更新
         user.setPassword(newPassword);
-        userRepository.updateById(user.getId(), user);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
         
         // トークンを使用済みにする
         tokenRepository.markAsUsed(resetToken.getId());
@@ -133,7 +134,7 @@ public class PasswordResetService {
     /**
      * トークンからメールアドレスを取得
      * @param token トークン文字列
-     * @return メールアドレス（トークンが無効な場合はnull）
+     * @return メールアドレス(トークンが無効な場合はnull)
      */
     public String getEmailFromToken(String token) {
         PasswordResetTokenEntity resetToken = tokenRepository.findByToken(token);

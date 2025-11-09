@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
+import java.time.LocalDateTime;
 
 @Controller
 public class AuthController {
@@ -37,7 +38,8 @@ public class AuthController {
             RedirectAttributes redirectAttributes) {
         
         try {
-            UserEntity user = userRepository.getByEmail(email);
+            // 修正: getByEmail() → findByEmail()
+            UserEntity user = userRepository.findByEmail(email);
             
             if (user == null) {
                 redirectAttributes.addFlashAttribute("error", "メールアドレスまたはパスワードが正しくありません");
@@ -49,7 +51,9 @@ public class AuthController {
                 return "redirect:/login";
             }
             
+            // セッションに保存（user オブジェクトも保存）
             session.setAttribute("userId", user.getId());
+            session.setAttribute("user", user);  // 追加: userオブジェクトも保存
             session.setAttribute("username", user.getUsername());
             session.setAttribute("email", user.getEmail());
             session.setAttribute("companyId", user.getCompanyId());
@@ -170,7 +174,8 @@ public class AuthController {
                 return "redirect:/signup";
             }
             
-            if (userRepository.existsByUsername(username)) {
+            // 修正: existsByUsername() メソッドが存在しない場合は、findByUsername() でチェック
+            if (userRepository.findByUsername(username) != null) {
                 redirectAttributes.addFlashAttribute("error", "このユーザー名は既に使用されています");
                 redirectAttributes.addFlashAttribute("email", email);
                 return "redirect:/signup";
@@ -181,8 +186,11 @@ public class AuthController {
             newUser.setEmail(email);
             newUser.setPassword(password);
             newUser.setCompanyId(companyId);
+            newUser.setCreatedAt(LocalDateTime.now());
+            newUser.setUpdatedAt(LocalDateTime.now());
 
-            userRepository.create(newUser);
+            // 修正: create() → save()
+            userRepository.save(newUser);
 
             redirectAttributes.addFlashAttribute("success", "アカウントの登録が完了しました。ログインしてください。");
             return "redirect:/login";

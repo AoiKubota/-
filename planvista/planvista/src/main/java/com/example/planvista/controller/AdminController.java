@@ -61,7 +61,8 @@ public class AdminController {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 // キーワード検索 - すべてのユーザーから検索
                 System.out.println("キーワード検索: " + keyword);
-                users = userRepository.getAll().stream()
+                // 修正: getAll() → findAll()
+                users = userRepository.findAll().stream()
                         .filter(u -> u.getUsername().toLowerCase().contains(keyword.trim().toLowerCase()) ||
                                    u.getEmail().toLowerCase().contains(keyword.trim().toLowerCase()) ||
                                    u.getCompanyId().toLowerCase().contains(keyword.trim().toLowerCase()))
@@ -69,7 +70,8 @@ public class AdminController {
             } else {
                 // すべてのユーザーを取得
                 System.out.println("すべてのユーザーを取得中...");
-                users = userRepository.getAll();
+                // 修正: getAll() → findAll()
+                users = userRepository.findAll();
             }
             
             System.out.println("取得したユーザー数: " + (users != null ? users.size() : 0));
@@ -79,7 +81,7 @@ public class AdminController {
                 users = new java.util.ArrayList<>();
             }
             
-            // デバッグ：ユーザー情報を出力
+            // デバッグ:ユーザー情報を出力
             if (users.size() > 0) {
                 System.out.println("最初のユーザー: " + users.get(0).getUsername() + " (所属ID: " + users.get(0).getCompanyId() + ")");
             }
@@ -160,6 +162,7 @@ public class AdminController {
             }
             
             // ユーザー情報を取得
+            // 修正: getById() は同じ名前だが、実装を確認
             UserEntity user = userRepository.getById(userId);
             if (user == null) {
                 redirectAttributes.addFlashAttribute("error", "指定されたユーザーが見つかりません");

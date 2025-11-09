@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メンバー一覧 - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        .members-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .members-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .members-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .member-email {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .btn-view-calendar {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        
+        .btn-view-calendar:hover {
+            background: #45a049;
+            color: white;
+        }
+        
+        .btn-remove {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-remove:hover {
+            background: #d32f2f;
+        }
+        
+        .add-member-form {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .add-member-form h3 {
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .add-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        
+        .add-btn:hover {
+            background: #1976D2;
+        }
+        
+        .flash-message {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .empty-message {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="logo">
+                        <i class="bi bi-calendar-check"></i> PlanVista
+                    </div>
+                </div>
+                <div class="col-md-9 text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/main'">
+                        <i class="bi bi-house-door"></i> メインページ
+                    </button>
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/calendar'">
+                        <i class="bi bi-calendar3"></i> カレンダー
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="location.href='/ai_analysis'">
+                        <i class="bi bi-graph-up"></i> AI分析
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-list"></i> メニュー
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/members">
+                                <i class="bi bi-people"></i> チームメンバー一覧
+                            </a></li>
+                            <li><a class="dropdown-item" href="/setting">
+                                <i class="bi bi-gear"></i> 設定
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="bi bi-box-arrow-right"></i> ログアウト
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="members-container">
+        <div class="members-header">
+            <h1>メンバー一覧</h1>
+        </div>
+        
+        <!-- フラッシュメッセージ -->
+        <div th:if="${success}" class="flash-message flash-success" th:text="${success}"></div>
+        <div th:if="${error}" class="flash-message flash-error" th:text="${error}"></div>
+        
+        <!-- メンバー一覧 -->
+        <div class="members-list">
+            <h3>チームメンバー</h3>
+            <div th:if="${members != null && !members.isEmpty()}">
+                <div class="member-item" th:each="member : ${members}">
+                    <div class="member-info">
+                        <div class="member-name" th:text="${member.username}">Abe taro</div>
+                        <div class="member-email" th:text="${member.email}">abe@example.com</div>
+                    </div>
+                    <div>
+                        <a th:href="@{/members_calendar/{userId}(userId=${member.id})}"
+                           class="btn-view-calendar">
+                            <i class="bi bi-calendar"></i> カレンダーを見る
+                        </a>
+                        <form th:action="@{/members/remove/{userId}(userId=${member.id})}" 
+                              method="post" 
+                              style="display: inline;"
+                              onsubmit="return confirm('このメンバーを削除してもよろしいですか?');">
+                            <button type="submit" class="btn-remove">
+                                <i class="bi bi-trash"></i> 削除
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${members == null || members.isEmpty()}" class="empty-message">
+                <p>メンバーがいません</p>
+            </div>
+        </div>
+        
+        <!-- メンバー追加フォーム -->
+        <div class="add-member-form">
+            <h3>メンバーを追加</h3>
+            <form th:action="@{/members/add}" method="post">
+                <div class="form-group">
+                    <label for="username">ユーザー名</label>
+                    <input type="text" 
+                           id="username" 
+                           name="username" 
+                           placeholder="ユーザー名を入力"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="email">メールアドレス</label>
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           placeholder="メールアドレスを入力"
+                           required>
+                </div>
+                <button type="submit" class="add-btn">
+                    <i class="bi bi-plus-circle"></i> 追加
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
