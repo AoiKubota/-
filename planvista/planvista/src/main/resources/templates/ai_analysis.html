@@ -4,54 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI分析 - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
             color: #333;
         }
 
-        /* ヘッダー */
-        header {
+        /* ヘッダー（Mainと統一） */
+        .header {
             background-color: #fff;
-            padding: 15px 30px;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 30px;
         }
 
         .logo {
             font-size: 24px;
             font-weight: bold;
-            color: #4a90e2;
-            }
-
-        .header-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .header-btn {
-            padding: 8px 16px;
-            border: none;
-            background-color: #4a90e2;
-            color: white;
-            border-radius: 5px;
+            color: #0d6efd;
             cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-
-        .header-btn:hover {
-            background-color: #357abd;
         }
 
         /* メインコンテンツ */
@@ -76,13 +52,13 @@
             margin-bottom: 30px;
         }
 
-        /* 左側：タスク別所要平均時間 */
+        /* 左側:タスク別所要平均時間 */
         .left-section {
             display: flex;
             flex-direction: column;
         }
 
-        /* 右側：スケジュール正確度 + フィードバック */
+        /* 右側:スケジュール正確度 + フィードバック */
         .right-section {
             display: flex;
             flex-direction: column;
@@ -103,8 +79,8 @@
             font-size: 20px;
             font-weight: bold;
             margin-bottom: 20px;
-            color: #4a90e2;
-            border-bottom: 2px solid #4a90e2;
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
             padding-bottom: 10px;
         }
 
@@ -128,7 +104,7 @@
             padding: 15px 20px;
             background-color: #f9f9f9;
             border-radius: 8px;
-            border-left: 4px solid #4a90e2;
+            border-left: 4px solid #0d6efd;
         }
 
         .task-name {
@@ -139,7 +115,7 @@
         .task-time {
             font-size: 18px;
             font-weight: bold;
-            color: #4a90e2;
+            color: #0d6efd;
         }
 
         /* スケジュール正確度 */
@@ -161,7 +137,7 @@
         .accuracy-value {
             font-size: 72px;
             font-weight: bold;
-            color: #4a90e2;
+            color: #0d6efd;
             margin-bottom: 10px;
         }
 
@@ -180,7 +156,7 @@
             background-color: #f0f7ff;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #4a90e2;
+            border-left: 4px solid #0d6efd;
             line-height: 1.8;
             font-size: 16px;
             min-height: 150px;
@@ -202,7 +178,7 @@
 
         .export-btn {
             padding: 15px 40px;
-            background-color: #e74c3c;
+            background-color: #dc3545;
             color: white;
             border: none;
             border-radius: 5px;
@@ -215,7 +191,8 @@
         }
 
         .export-btn:hover {
-            background-color: #c0392b;
+            background-color: #c82333;
+            color: white;
         }
 
         /* データ不足メッセージ */
@@ -269,15 +246,25 @@
     </style>
 </head>
 <body>
-    <!-- ヘッダー -->
-    <header>
-        <div class="logo">PlanVista</div>
-        <div class="header-buttons">
-            <a href="/calendar" class="header-btn">📅 カレンダー</a>
-            <a href="/ai_analysis" class="header-btn">🔍 AI分析</a>
-            <a href="/logout" class="header-btn">ログアウト</a>
+    <!-- ヘッダー（Mainと統一） -->
+    <div class="header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="logo" onclick="location.href='/main'">PlanVista</div>
+                <div class="d-flex gap-2">
+                    <a href="/calendar" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar3"></i> カレンダー
+                    </a>
+                    <a href="/ai_analysis" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up"></i> AI分析
+                    </a>
+                    <a href="/logout" class="btn btn-outline-danger">
+                        <i class="bi bi-box-arrow-right"></i> ログアウト
+                    </a>
+                </div>
+            </div>
         </div>
-    </header>
+    </div>
 
     <!-- メインコンテンツ -->
     <div class="container">
@@ -285,7 +272,7 @@
 
         <!-- メイングリッド -->
         <div class="main-grid">
-            <!-- 左側：タスク別所要平均時間 -->
+            <!-- 左側:タスク別所要平均時間 -->
             <div class="left-section">
                 <div class="analysis-section task-section">
                     <div class="section-title">タスク別所要平均時間</div>
@@ -301,7 +288,7 @@
                 </div>
             </div>
 
-            <!-- 右側：スケジュール正確度 + フィードバック -->
+            <!-- 右側:スケジュール正確度 + フィードバック -->
             <div class="right-section">
                 <!-- スケジュール正確度 -->
                 <div class="analysis-section accuracy-section">
@@ -329,8 +316,13 @@
 
         <!-- エクスポートボタン -->
         <div class="export-section">
-            <a href="/ai_analysis/export" class="export-btn">📄 エクスポート（PDF）</a>
+            <a href="/ai_analysis/export" class="export-btn">
+                <i class="bi bi-file-earmark-pdf"></i> エクスポート(PDF)
+            </a>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

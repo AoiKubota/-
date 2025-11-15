@@ -1,0 +1,20 @@
+-- V12: recordsテーブルのevent_idをschedule_idに変更
+-- event_idはeventsテーブルが削除され、schedulesテーブルに統合されたため、
+-- カラム名をschedule_idに変更する
+
+-- ステップ1: 新しいschedule_idカラムを追加
+ALTER TABLE records
+ADD COLUMN schedule_id BIGINT COMMENT '対応するスケジュールID' AFTER user_id;
+
+-- ステップ2: event_idのデータをschedule_idにコピー
+UPDATE records SET schedule_id = event_id WHERE event_id IS NOT NULL;
+
+-- ステップ3: event_idカラムを削除
+ALTER TABLE records DROP COLUMN event_id;
+
+-- ステップ4: インデックスを追加（パフォーマンス向上）
+ALTER TABLE records ADD INDEX idx_schedule_id (schedule_id);
+
+-- ステップ5: その他のインデックスを確認・追加
+-- ユーザーIDと開始時刻の複合インデックス（よく使われるクエリ用）
+ALTER TABLE records ADD INDEX idx_user_id_start_time (user_id, start_time);
