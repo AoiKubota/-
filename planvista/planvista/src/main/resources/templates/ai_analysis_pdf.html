@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>AI分析レポート - PlanVista</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "MS Gothic", "MS PGothic", "Hiragino Kaku Gothic Pro", "Meiryo", sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* ヘッダー */
+        .pdf-header {
+            background-color: #fff;
+            border-bottom: 2px solid #dee2e6;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+        }
+
+        .pdf-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 5px;
+        }
+
+        .pdf-date {
+            font-size: 11px;
+            color: #666;
+            text-align: right;
+        }
+
+        /* タイトル */
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        /* 2カラムレイアウト */
+        .main-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .left-section {
+            display: table-cell;
+            width: 50%;
+            padding-right: 10px;
+            vertical-align: top;
+        }
+
+        .right-section {
+            display: table-cell;
+            width: 50%;
+            padding-left: 10px;
+            vertical-align: top;
+        }
+
+        /* 分析セクション */
+        .analysis-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* タスク別所要平均時間 */
+        .task-section {
+            min-height: 400px;
+        }
+
+        .task-list {
+            display: block;
+        }
+
+        .task-item {
+            display: table;
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #0d6efd;
+            border-radius: 5px;
+        }
+
+        .task-name {
+            display: table-cell;
+            font-size: 13px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+
+        .task-time {
+            display: table-cell;
+            text-align: right;
+            font-size: 16px;
+            font-weight: bold;
+            color: #0d6efd;
+            vertical-align: middle;
+            width: 60px;
+        }
+
+        /* スケジュール正確度 */
+        .accuracy-section {
+            min-height: 180px;
+        }
+
+        .accuracy-display {
+            text-align: center;
+            padding: 25px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .accuracy-value {
+            font-size: 56px;
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 8px;
+        }
+
+        .accuracy-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* AIフィードバック */
+        .feedback-section {
+            min-height: 180px;
+        }
+
+        .feedback-content {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #0d6efd;
+            line-height: 1.7;
+        }
+
+        .feedback-item {
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .feedback-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* データなしメッセージ */
+        .no-data-message {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 13px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        /* フッター */
+        .pdf-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="pdf-header">
+        <div class="pdf-logo">PlanVista</div>
+        <div class="pdf-date" th:text="${'作成日時: ' + exportDate}">作成日時: 2024/01/01 12:00</div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <h1>AI分析</h1>
+
+    <!-- メイングリッド (2カラム) -->
+    <div class="main-grid">
+        <!-- 左側: タスク別所要平均時間 -->
+        <div class="left-section">
+            <div class="analysis-section task-section">
+                <div class="section-title">タスク別所要平均時間</div>
+                <div th:if="${taskAverageTimes != null and !taskAverageTimes.isEmpty()}" class="task-list">
+                    <div th:each="entry : ${taskAverageTimes}" class="task-item">
+                        <span class="task-name" th:text="${entry.key}">会議</span>
+                        <span class="task-time" th:text="${entry.value}">02:00</span>
+                    </div>
+                </div>
+                <div th:if="${taskAverageTimes == null or taskAverageTimes.isEmpty()}" class="no-data-message">
+                    データがありません
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側: スケジュール正確度 + フィードバック -->
+        <div class="right-section">
+            <!-- スケジュール正確度 -->
+            <div class="analysis-section accuracy-section">
+                <div class="section-title">スケジュール正確度</div>
+                <div class="accuracy-display">
+                    <div class="accuracy-value" th:text="${accuracy != null ? accuracy + '%' : '0%'}">0%</div>
+                    <div class="accuracy-label">正確度</div>
+                </div>
+            </div>
+
+            <!-- AIによるフィードバック -->
+            <div class="analysis-section feedback-section">
+                <div class="section-title">AIによるフィードバック</div>
+                <div class="feedback-content">
+                    <div th:if="${feedbacks != null and !feedbacks.isEmpty()}">
+                        <div th:each="feedback : ${feedbacks}" class="feedback-item" th:text="${feedback}">
+                            メール確認のタスクが想定より長引くことが多いようです。もう少し余裕をもって時間を見積もってみましょう。
+                        </div>
+                    </div>
+                    <div th:if="${feedbacks == null or feedbacks.isEmpty()}" class="feedback-item">
+                        記録されたデータがまだ少ないため、詳細な分析ができません。もっとデータを蓄積してから再度お試しください。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="pdf-footer">
+        <p>このレポートはPlanVistaによって自動生成されました</p>
+    </div>
+</body>
+</html>
