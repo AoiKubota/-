@@ -2,8 +2,10 @@ package com.example.planvista.service;
 
 import com.example.planvista.model.entity.ScheduleEntity;
 import com.example.planvista.model.entity.TaskEntity;
+import com.example.planvista.model.entity.RecordEntity;
 import com.example.planvista.repository.ScheduleRepository;
 import com.example.planvista.repository.TaskRepository;
+import com.example.planvista.repository.RecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,9 @@ public class ScheduleService {
     
     @Autowired
     private TaskRepository taskRepository;
+    
+    @Autowired
+    private RecordRepository recordRepository;
     
     // デフォルトタスク名
     private static final String DEFAULT_TASK_NAME = "その他";
@@ -256,17 +261,50 @@ public class ScheduleService {
     
     /**
      * タスクの推測所要時間を取得
-     * 過去の実績レコードから平均時間を計算
-     * 注意: RecordRepositoryが未実装のため、ダミーデータを返す
+     * 過去3ヶ月の実績レコードから平均時間を計算
      */
     public Map<String, String> getEstimatedTaskTime(Long userId, String taskName) {
         Map<String, String> result = new HashMap<>();
         
-        // TODO: RecordRepositoryが実装されたら、過去の実績データから計算する
-        // 現在はダミーデータを返す
-        result.put("estimatedTime", "データなし");
-        result.put("minutes", "0");
-        result.put("recordCount", "0");
+        try {
+            // 過去3ヶ月のデータを取得
+            LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
+            LocalDateTime now = LocalDateTime.now();
+            
+            // 指定タスクの実績データを取得
+            List<RecordEntity> records = 
+                    recordRepository.findByUserIdAndTaskNameAndDateRange(userId, taskName, threeMonthsAgo, now);
+            
+            if (records.isEmpty()) {
+                // データがない場合はデフォルト値
+                result.put("estimatedTime", "00:30");
+                result.put("minutes", "30");
+                result.put("recordCount", "0");
+                return result;
+            }
+            
+            // 平均時間を計算
+            long totalMinutes = 0;
+            for (RecordEntity record : records) {
+                totalMinutes += record.getDurationMinutes();
+            }
+            long avgMinutes = totalMinutes / records.size();
+            
+            // 時間:分の形式に変換
+            long hours = avgMinutes / 60;
+            long minutes = avgMinutes % 60;
+            String estimatedTime = String.format("%02d:%02d", hours, minutes);
+            
+            result.put("estimatedTime", estimatedTime);
+            result.put("minutes", String.valueOf(avgMinutes));
+            result.put("recordCount", String.valueOf(records.size()));
+            
+        } catch (Exception e) {
+            // エラー時はデフォルト値
+            result.put("estimatedTime", "00:30");
+            result.put("minutes", "30");
+            result.put("recordCount", "0");
+        }
         
         return result;
     }

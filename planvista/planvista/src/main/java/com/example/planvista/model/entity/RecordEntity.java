@@ -22,9 +22,9 @@ public class RecordEntity {
     /**
      * スケジュールID
      * どのスケジュールの実績記録かを示す
-     * 旧: event_id → 新: schedule_id
+     * データベースのカラム名: event_id
      */
-    @Column(name = "schedule_id")
+    @Column(name = "event_id")
     private Long scheduleId;
     
     @Column(name = "task_id", nullable = false)

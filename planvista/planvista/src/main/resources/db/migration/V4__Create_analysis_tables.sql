@@ -11,13 +11,17 @@ CREATE TABLE IF NOT EXISTS tasks (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='タスクマスタテーブル';
 
--- スケジュールテーブルにタスクIDを追加
+-- eventsテーブルにタスクIDを追加
+-- V7でeventsテーブルがschedulesに統合される
 ALTER TABLE events 
 ADD COLUMN task_id BIGINT COMMENT 'タスクID' AFTER user_id,
 ADD INDEX idx_task_id (task_id);
 
--- レコード（実績）テーブル
-CREATE TABLE IF NOT EXISTS records (
+-- V1で作成された古いrecordsテーブルを削除
+DROP TABLE IF EXISTS records;
+
+-- レコード（実績）テーブルを新規作成
+CREATE TABLE records (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'ID',
     user_id BIGINT NOT NULL COMMENT 'ユーザーID',
     event_id BIGINT COMMENT '対応するスケジュールID',
