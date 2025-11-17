@@ -566,31 +566,37 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modal-title">スケジュール名</h5>
+                    <h5 class="modal-title" id="scheduleDetailModalLabel">スケジュール詳細</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
+                        <strong>スケジュール名</strong>
+                        <p id="scheduleTitle" class="mb-0 mt-1"></p>
+                    </div>
+                    <div class="mb-3">
                         <strong>日付</strong>
-                        <p id="scheduleDate" class="mb-0 mt-1">2025/12/12</p>
+                        <p id="scheduleDate" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>時間</strong>
-                        <p id="scheduleTime" class="mb-0 mt-1">12:00～15:00</p>
+                        <p id="scheduleTime" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>タスク名</strong>
-                        <p id="scheduleTask" class="mb-0 mt-1">会議</p>
+                        <p id="scheduleTask" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>メモ</strong>
-                        <p id="scheduleMemo" class="mb-0 mt-1" style="white-space: pre-wrap;">第3会議室
-会議資料を持っていくのを忘れないこと!</p>
+                        <p id="scheduleMemo" class="mb-0 mt-1" style="white-space: pre-wrap;"></p>
+                    </div>
+                    <div id="googleSyncInfo" class="alert alert-info" style="display: none;">
+                        <i class="bi bi-info-circle"></i> このスケジュールはGoogleカレンダーから同期されています
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="btnEditSchedule" onclick="editSchedule()">編集</button>
-                    <button type="button" class="btn btn-danger" id="btnDeleteSchedule" onclick="deleteSchedule()">削除</button>
+                    <button type="button" class="btn btn-primary" id="editScheduleBtn" onclick="editSchedule()">編集</button>
+                    <button type="button" class="btn btn-danger" id="deleteScheduleBtn" onclick="deleteSchedule()">削除</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
 </div>
             </div>
@@ -608,27 +614,27 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <strong>日付</strong>
-                        <p id="recordDate" class="mb-0 mt-1">2025/12/12</p>
+                        <p id="recordDate" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>時間</strong>
-                        <p id="recordTime" class="mb-0 mt-1">14:00～16:00</p>
+                        <p id="recordTime" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>タスク名</strong>
-                        <p id="recordTask" class="mb-0 mt-1">会議</p>
+                        <p id="recordTask" class="mb-0 mt-1"></p>
                     </div>
                     <div class="mb-3">
                         <strong>メモ</strong>
-                        <p id="recordMemo" class="mb-0 mt-1" style="white-space: pre-wrap;">時間変更</p>
+                        <p id="recordMemo" class="mb-0 mt-1" style="white-space: pre-wrap;"></p>
                     </div>
                     <div class="mb-3">
                         <strong>AIによる分析</strong>
                         <div class="mt-2 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
                             <p class="mb-2"><strong>所要時間差異</strong></p>
-                            <p class="mb-1">開始時間: <span id="recordStartDiff" class="text-primary fw-bold">+02:00</span></p>
-                            <p class="mb-1">終了時間: <span id="recordEndDiff" class="text-primary fw-bold">+02:00</span></p>
-                            <p class="mb-0">所要時間: <span id="recordDurationDiff" class="text-success fw-bold">+-00:00</span></p>
+                            <p class="mb-1">開始時間: <span id="recordStartDiff" class="text-primary fw-bold"></span></p>
+                            <p class="mb-1">終了時間: <span id="recordEndDiff" class="text-primary fw-bold"></span></p>
+                            <p class="mb-0">所要時間: <span id="recordDurationDiff" class="text-success fw-bold"></span></p>
                         </div>
                     </div>
                 </div>
@@ -991,16 +997,39 @@
             }
         }
         
+        // 現在表示中のスケジュールIDを保持
+        let currentScheduleId = null;
+        
         function showScheduleDetail(data) {
-            document.getElementById('scheduleDetailModalLabel').textContent = data.title;
+            currentScheduleId = data.id;
+            
+            document.getElementById('scheduleDetailModalLabel').textContent = 'スケジュール詳細';
+            document.getElementById('scheduleTitle').textContent = data.title;
             document.getElementById('scheduleDate').textContent = data.date;
             
             const startTime = `${String(data.startHour).padStart(2, '0')}:${String(data.startMinute).padStart(2, '0')}`;
             const endTime = `${String(data.endHour).padStart(2, '0')}:${String(data.endMinute).padStart(2, '0')}`;
             document.getElementById('scheduleTime').textContent = `${startTime}～${endTime}`;
             
-            document.getElementById('scheduleTask').textContent = data.task;
-            document.getElementById('scheduleMemo').textContent = data.memo || 'メモなし';
+            document.getElementById('scheduleTask').textContent = data.task || 'その他';
+            document.getElementById('scheduleMemo').textContent = data.memo || '';
+            
+            // 編集・削除ボタンの表示制御
+            const editBtn = document.getElementById('editScheduleBtn');
+            const deleteBtn = document.getElementById('deleteScheduleBtn');
+            const syncInfo = document.getElementById('googleSyncInfo');
+            
+            if (data.isSyncedFromGoogle || data.type === 'google') {
+                // Google同期スケジュールは編集・削除不可
+                if (editBtn) editBtn.style.display = 'none';
+                if (deleteBtn) deleteBtn.style.display = 'none';
+                if (syncInfo) syncInfo.style.display = 'block';
+            } else {
+                // 手動登録スケジュールは編集・削除可能
+                if (editBtn) editBtn.style.display = 'inline-block';
+                if (deleteBtn) deleteBtn.style.display = 'inline-block';
+                if (syncInfo) syncInfo.style.display = 'none';
+            }
             
             const modal = new bootstrap.Modal(document.getElementById('scheduleDetailModal'));
             modal.show();
@@ -1021,14 +1050,41 @@
         }
         
         function editSchedule() {
-            alert('スケジュール編集機能は実装予定です');
+            if (currentScheduleId) {
+                window.location.href = `/schedule_update?id=${currentScheduleId}`;
+            } else {
+                alert('スケジュールIDが取得できませんでした');
+            }
         }
         
         function deleteSchedule() {
+            if (!currentScheduleId) {
+                alert('スケジュールIDが取得できませんでした');
+                return;
+            }
+            
             if (confirm('このスケジュールを削除しますか?')) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailModal'));
-                modal.hide();
-                alert('スケジュールを削除しました');
+                fetch(`/schedule_delete/${currentScheduleId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailModal'));
+                        modal.hide();
+                        alert('スケジュールを削除しました');
+                        location.reload();
+                    } else {
+                        alert('削除に失敗しました: ' + (data.message || ''));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('削除中にエラーが発生しました');
+                });
             }
         }
         

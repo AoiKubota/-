@@ -4,52 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>スケジュール変更 - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
         }
 
-        header {
-            background-color: #ffffff;
-            padding: 1rem 2rem;
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 30px;
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: #0d6efd;
             cursor: pointer;
-        }
-
-        .header-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .header-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .header-btn:hover {
-            background-color: #45a049;
         }
 
         .container {
@@ -238,11 +214,44 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo" onclick="location.href='/main'">PlanVista</div>
-        <div class="header-buttons">
-            <a href="/calendar" class="header-btn">📅 カレンダー</a>
-            <a href="/ai_analysis" class="header-btn">📊 AI分析</a>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="logo" onclick="location.href='/main'">
+                        <i class="bi bi-calendar-check"></i> PlanVista
+                    </div>
+                </div>
+                <div class="col-md-9 text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/main'">
+                        <i class="bi bi-house"></i> メインページ
+                    </button>
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/calendar'">
+                        <i class="bi bi-calendar3"></i> カレンダー
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="location.href='/ai_analysis'">
+                        <i class="bi bi-graph-up"></i> AI分析
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-list"></i> メニュー
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/google_calendar_synchronize">
+                                <i class="bi bi-arrow-repeat"></i> Google同期
+                            </a></li>
+                            <li><a class="dropdown-item" href="/members">
+                                <i class="bi bi-people"></i> チームメンバー一覧
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="bi bi-box-arrow-right"></i> ログアウト
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -257,7 +266,7 @@
 
         <!-- Google同期スケジュールの警告 -->
         <div th:if="${schedule.isSyncedFromGoogle}" class="alert alert-warning">
-            ⚠️ このスケジュールはGoogleカレンダーから同期されています。編集はできません。
+            <i class="bi bi-exclamation-triangle"></i> このスケジュールはGoogleカレンダーから同期されています。編集はできません。
         </div>
 
         <form action="/schedule_update" method="post">
@@ -293,7 +302,9 @@
                             th:text="${task.taskName}"
                             th:selected="${task.taskName == schedule.task}"></option>
                 </select>
-                <button type="button" class="task-add-btn" onclick="showNewTaskInput()">+ 新規のタスク名を作る</button>
+                <button type="button" class="task-add-btn" onclick="showNewTaskInput()">
+                    <i class="bi bi-plus-circle"></i> 新規のタスク名を作る
+                </button>
                 
                 <div class="new-task-input" id="newTaskInput">
                     <input type="text" id="newTaskName" placeholder="新しいタスク名を入力" maxlength="100">
@@ -302,7 +313,7 @@
             </div>
 
             <div class="estimated-time">
-                <h3>推測される所要時間</h3>
+                <h3><i class="bi bi-clock-history"></i> 推測される所要時間</h3>
                 <div class="time-display" id="estimatedTime" th:text="${estimatedTime != null ? estimatedTime : '--:--'}"></div>
             </div>
 
@@ -313,12 +324,19 @@
             </div>
 
             <div class="button-group">
-                <button type="submit" class="submit-btn">変更</button>
-                <a href="/calendar" class="back-btn">カレンダーページへ戻る</a>
+                <button type="submit" class="submit-btn">
+                    <i class="bi bi-check-circle"></i> 変更
+                </button>
+                <a href="/calendar" class="back-btn">
+                    <i class="bi bi-arrow-left"></i> カレンダーページへ戻る
+                </a>
             </div>
         </form>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <!-- 共通JavaScript -->
     <script src="/js/common.js"></script>
     

@@ -2,7 +2,10 @@ package com.example.planvista.controller;
 
 import com.example.planvista.model.entity.ScheduleEntity;
 import com.example.planvista.model.entity.TaskEntity;
+import com.example.planvista.model.entity.UserActivityEntity;
+import com.example.planvista.repository.UserActivityRepository;
 import com.example.planvista.service.ScheduleService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -27,6 +30,31 @@ public class ScheduleController {
 
     @Autowired
     private ScheduleService scheduleService;
+    
+    @Autowired
+    private UserActivityRepository userActivityRepository;
+
+    /**
+     * ユーザーアクティビティを記録するヘルパーメソッド
+     */
+    private void logActivity(Integer userId, String activityType, String description, HttpServletRequest request) {
+        try {
+            UserActivityEntity activity = new UserActivityEntity();
+            activity.setUserId(userId);
+            activity.setActivityType(activityType);
+            activity.setActivityDescription(description);
+            
+            if (request != null) {
+                activity.setIpAddress(request.getRemoteAddr());
+                activity.setUserAgent(request.getHeader("User-Agent"));
+            }
+            
+            userActivityRepository.create(activity);
+        } catch (Exception e) {
+            // アクティビティログの記録失敗は処理を中断しない
+            System.err.println("アクティビティログ記録エラー: " + e.getMessage());
+        }
+    }
 
     /**
      * スケジュール登録画面を表示
@@ -59,6 +87,7 @@ public class ScheduleController {
      */
     @PostMapping("/schedule_add")
     public String addSchedule(HttpSession session,
+                            HttpServletRequest request,
                             @RequestParam("scheduleName") String scheduleName,
                             @RequestParam("date") String date,
                             @RequestParam("startTime") String startTime,
@@ -112,6 +141,10 @@ public class ScheduleController {
             ScheduleEntity savedSchedule = scheduleService.createManualSchedule(schedule);
             System.out.println("保存されたスケジュールID: " + savedSchedule.getId());
             System.out.println("=== スケジュール登録完了 ===");
+            
+            // アクティビティログを記録
+            logActivity(userId.intValue(), "スケジュール登録", 
+                "スケジュール「" + scheduleName.trim() + "」を登録しました", request);
 
             redirectAttributes.addFlashAttribute("success", "スケジュールを登録しました");
             return "redirect:/calendar";
@@ -187,6 +220,7 @@ public class ScheduleController {
      */
     @PostMapping("/schedule_update")
     public String updateSchedule(HttpSession session,
+                               HttpServletRequest request,
                                @RequestParam("scheduleId") Long scheduleId,
                                @RequestParam("scheduleName") String scheduleName,
                                @RequestParam("date") String date,
@@ -254,6 +288,10 @@ public class ScheduleController {
             ScheduleEntity updatedSchedule = scheduleService.updateManualSchedule(schedule);
             System.out.println("スケジュール更新完了: ID=" + updatedSchedule.getId());
             System.out.println("=== スケジュール更新完了 ===");
+            
+            // アクティビティログを記録
+            logActivity(userId.intValue(), "スケジュール編集", 
+                "スケジュール「" + scheduleName.trim() + "」を編集しました", request);
 
             redirectAttributes.addFlashAttribute("success", "スケジュールを更新しました");
             return "redirect:/calendar";
@@ -272,11 +310,12 @@ public class ScheduleController {
     }
 
     /**
-     * スケジュールを削除（論理削除）
+     * スケジュールを削除（論理削除）- リダイレクト版
      * Google同期スケジュールは削除不可
      */
     @PostMapping("/schedule_delete")
     public String deleteSchedule(HttpSession session,
+                               HttpServletRequest request,
                                @RequestParam("scheduleId") Long scheduleId,
                                RedirectAttributes redirectAttributes) {
         try {
@@ -289,12 +328,21 @@ public class ScheduleController {
             System.out.println("=== スケジュール削除開始 ===");
             System.out.println("scheduleId: " + scheduleId);
             System.out.println("userId: " + userId);
+            
+            // 削除前にスケジュール名を取得
+            Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
+            String scheduleName = scheduleOpt.map(ScheduleEntity::getTitle).orElse("不明");
 
             // 論理削除を実行
             boolean deleted = scheduleService.deleteSchedule(scheduleId, userId);
             
             if (deleted) {
                 System.out.println("スケジュール削除完了: ID=" + scheduleId);
+                
+                // アクティビティログを記録
+                logActivity(userId.intValue(), "スケジュール削除", 
+                    "スケジュール「" + scheduleName + "」を削除しました", request);
+                
                 redirectAttributes.addFlashAttribute("success", "スケジュールを削除しました");
             } else {
                 System.err.println("スケジュール削除失敗: ID=" + scheduleId);
@@ -314,6 +362,67 @@ public class ScheduleController {
             redirectAttributes.addFlashAttribute("error", "スケジュールの削除に失敗しました: " + e.getMessage());
             return "redirect:/calendar";
         }
+    }
+
+    /**
+     * スケジュールを削除（論理削除）- Ajax用JSON版
+     * Google同期スケジュールは削除不可
+     */
+    @PostMapping("/schedule_delete/{scheduleId}")
+    @ResponseBody
+    public Map<String, Object> deleteScheduleAjax(HttpSession session,
+                                                  HttpServletRequest request,
+                                                  @PathVariable("scheduleId") Long scheduleId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // ログインチェック
+            Long userId = getUserIdAsLong(session);
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "ログインしてください");
+                return response;
+            }
+
+            System.out.println("=== スケジュール削除開始(Ajax) ===");
+            System.out.println("scheduleId: " + scheduleId);
+            System.out.println("userId: " + userId);
+            
+            // 削除前にスケジュール名を取得
+            Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
+            String scheduleName = scheduleOpt.map(ScheduleEntity::getTitle).orElse("不明");
+
+            // 論理削除を実行
+            boolean deleted = scheduleService.deleteSchedule(scheduleId, userId);
+            
+            if (deleted) {
+                System.out.println("スケジュール削除完了: ID=" + scheduleId);
+                
+                // アクティビティログを記録
+                logActivity(userId.intValue(), "スケジュール削除", 
+                    "スケジュール「" + scheduleName + "」を削除しました", request);
+                
+                response.put("success", true);
+                response.put("message", "スケジュールを削除しました");
+            } else {
+                System.err.println("スケジュール削除失敗: ID=" + scheduleId);
+                response.put("success", false);
+                response.put("message", "スケジュールの削除に失敗しました");
+            }
+
+        } catch (IllegalStateException e) {
+            // Google同期スケジュールの削除を試みた場合
+            System.err.println("スケジュール削除エラー: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        } catch (Exception e) {
+            System.err.println("スケジュール削除エラー: " + e.getMessage());
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "スケジュールの削除に失敗しました");
+        }
+        
+        return response;
     }
 
     /**

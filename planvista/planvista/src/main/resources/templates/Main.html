@@ -741,7 +741,12 @@
             });
         }
 
+        // 現在表示中のスケジュールIDを保持
+        let currentScheduleId = null;
+
         function showScheduleDetail(data) {
+            currentScheduleId = data.id;  // スケジュールIDを保存
+            
             document.getElementById('scheduleDetailModalLabel').textContent = data.title;
             document.getElementById('scheduleDate').textContent = today;
             
@@ -771,14 +776,41 @@
         }
 
         function editSchedule() {
-            alert('スケジュール編集機能は実装予定です');
+            if (currentScheduleId) {
+                window.location.href = `/schedule_update?id=${currentScheduleId}`;
+            } else {
+                alert('スケジュールIDが取得できませんでした');
+            }
         }
 
         function deleteSchedule() {
+            if (!currentScheduleId) {
+                alert('スケジュールIDが取得できませんでした');
+                return;
+            }
+            
             if (confirm('このスケジュールを削除しますか?')) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailModal'));
-                modal.hide();
-                alert('スケジュールを削除しました');
+                fetch(`/schedule_delete/${currentScheduleId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailModal'));
+                        modal.hide();
+                        alert('スケジュールを削除しました');
+                        location.reload();
+                    } else {
+                        alert('削除に失敗しました: ' + (data.message || ''));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('削除中にエラーが発生しました');
+                });
             }
         }
 
