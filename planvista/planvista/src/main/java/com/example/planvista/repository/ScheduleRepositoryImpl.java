@@ -12,7 +12,9 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -169,5 +171,46 @@ public class ScheduleRepositoryImpl implements ScheduleRepository {
     public int logicalDeleteAllGoogleSyncedSchedules(Long userId, LocalDateTime deletedAt) {
         String sql = "UPDATE " + TABLE_NAME + " SET deleted_at = ? WHERE user_id = ? AND is_synced_from_google = true";
         return jdbcTemplate.update(sql, deletedAt, userId);
+    }
+
+    /**
+     * 指定ユーザーの指定月のスケジュールを取得（メンバーカレンダー用）
+     */
+    @Override
+    public List<ScheduleEntity> findByUserIdAndMonth(Integer userId, int year, int month) {
+        // 月の最初の日と最後の日を取得
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+        
+        String sql = "SELECT * FROM " + TABLE_NAME + 
+                     " WHERE user_id = ? " +
+                     " AND DATE(start_time) >= ? " +
+                     " AND DATE(start_time) <= ? " +
+                     " AND deleted_at IS NULL " +
+                     " ORDER BY start_time";
+        
+        return jdbcTemplate.query(sql, 
+                new BeanPropertyRowMapper<>(ScheduleEntity.class),
+                userId,
+                startDate,
+                endDate);
+    }
+
+    /**
+     * 指定ユーザーの指定日のスケジュールを取得（メンバーカレンダー用）
+     */
+    @Override
+    public List<ScheduleEntity> findByUserIdAndDate(Integer userId, LocalDate date) {
+        String sql = "SELECT * FROM " + TABLE_NAME + 
+                     " WHERE user_id = ? " +
+                     " AND DATE(start_time) = ? " +
+                     " AND deleted_at IS NULL " +
+                     " ORDER BY start_time";
+        
+        return jdbcTemplate.query(sql,
+                new BeanPropertyRowMapper<>(ScheduleEntity.class),
+                userId,
+                date);
     }
 }

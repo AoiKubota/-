@@ -2,6 +2,7 @@ package com.example.planvista.repository;
 
 import com.example.planvista.model.entity.ScheduleEntity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -55,4 +56,21 @@ public interface ScheduleRepository {
      * Google同期スケジュールの論理削除（同期解除時）
      */
     int logicalDeleteAllGoogleSyncedSchedules(Long userId, LocalDateTime deletedAt);
+
+    /**
+     * 指定ユーザーの指定月のスケジュールを取得（メンバーカレンダー用）
+     * @param userId ユーザーID
+     * @param year 年
+     * @param month 月
+     * @return スケジュールリスト
+     */
+    List<ScheduleEntity> findByUserIdAndMonth(Integer userId, int year, int month);
+
+    /**
+     * 指定ユーザーの指定日のスケジュールを取得（メンバーカレンダー用）
+     * @param userId ユーザーID
+     * @param date 日付
+     * @return スケジュールリスト
+     */
+    List<ScheduleEntity> findByUserIdAndDate(Integer userId, LocalDate date);
 }

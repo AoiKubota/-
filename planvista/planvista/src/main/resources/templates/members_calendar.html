@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${targetUser.username} + 'のカレンダー - PlanVista'">メンバーカレンダー - PlanVista</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        /* カレンダーコンテナ */
+        .calendar-wrapper {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 800px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* カレンダーヘッダー */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .calendar-title {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background-color: #e9ecef;
+            border-color: #0d6efd;
+        }
+        
+        /* 月次カレンダー */
+        .month-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            flex: 1;
+            align-content: start;
+            overflow-y: auto;
+        }
+        
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 10px;
+            color: #6c757d;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background-color: #fff;
+            min-height: 60px;
+            max-height: 90px;
+        }
+        
+        .calendar-day.sunday {
+            background-color: #fff5f5;
+        }
+        
+        .calendar-day.saturday {
+            background-color: #f0f8ff;
+        }
+        
+        .calendar-day:hover {
+            background-color: #f8f9fa;
+            border-color: #0d6efd;
+        }
+        
+        .calendar-day.today {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+        }
+        
+        .calendar-day.selected {
+            background-color: #cfe2ff;
+            border-color: #0d6efd;
+            font-weight: 600;
+        }
+        
+        .calendar-day.other-month {
+            color: #adb5bd;
+            background-color: #f8f9fa;
+        }
+        
+        .day-number {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .day-events {
+            font-size: 10px;
+        }
+        
+        /* 日次スケジュール表示 */
+        .daily-schedule {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 800px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .daily-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 2px solid #0d6efd;
+            background-color: #fff;
+        }
+        
+        .daily-date {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+            text-align: center;
+        }
+        
+        /* スクロール可能なコンテンツラッパー */
+        .daily-scroll-wrapper {
+            display: flex;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        /* 時間軸 */
+        .time-axis {
+            width: 80px;
+            flex-shrink: 0;
+            border-right: 2px solid #dee2e6;
+        }
+        
+        /* スケジュール欄 */
+        .schedule-column {
+            flex: 1;
+            position: relative;
+        }
+        
+        /* 時間スロット */
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+        
+        .time-label {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 5px 10px;
+            text-align: center;
+            line-height: 50px;
+        }
+        
+        /* カレンダーエリアのベース */
+        .calendar-area {
+            position: relative;
+            min-height: 1440px;
+        }
+        
+        /* 横線（グリッド） */
+        .grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #e9ecef;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* スケジュールアイテム */
+        .calendar-item {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
+            overflow: hidden;
+        }
+        
+        .schedule-item {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .schedule-item:hover {
+            background-color: #d0e9ff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .google-item {
+            background-color: #f0e7ff;
+            border-left: 4px solid #7c3aed;
+        }
+        
+        .item-content {
+            overflow: hidden;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .item-time {
+            font-size: 11px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* ツールチップ */
+        .item-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            line-height: 1.6;
+        }
+        
+        .item-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        .calendar-item:hover .item-tooltip {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        .user-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="logo">
+                        <i class="bi bi-calendar-check"></i> PlanVista
+                    </div>
+                </div>
+                <div class="col-md-9 text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/main'">
+                        <i class="bi bi-house-door"></i> メインページ
+                    </button>
+                    <button class="btn btn-outline-primary me-2" onclick="location.href='/calendar'">
+                        <i class="bi bi-calendar3"></i> カレンダー
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="location.href='/ai_analysis'">
+                        <i class="bi bi-graph-up"></i> AI分析
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-list"></i> メニュー
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/members">
+                                <i class="bi bi-people"></i> チームメンバー一覧
+                            </a></li>
+                            <li><a class="dropdown-item" href="/setting">
+                                <i class="bi bi-gear"></i> 設定
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="bi bi-box-arrow-right"></i> ログアウト
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- メインコンテンツ -->
+    <div class="container-fluid">
+        <div class="user-info">
+            <h3 th:text="${targetUser.username} + 'のカレンダー'">メンバーのカレンダー</h3>
+        </div>
+        
+        <div class="row">
+            <!-- 左側:月次カレンダー -->
+            <div class="col-md-7">
+                <div class="calendar-wrapper">
+                    <div class="calendar-header">
+                        <div class="calendar-title">
+                            <button class="nav-btn" id="prevMonth">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <span id="currentMonth">2025年 11月</span>
+                            <button class="nav-btn" id="nextMonth">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 月次カレンダー -->
+                    <div class="month-calendar" id="monthCalendar">
+                        <!-- JavaScriptで生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右側:日次スケジュール -->
+            <div class="col-md-5">
+                <div class="daily-schedule">
+                    <!-- 日付ヘッダー（上部固定） -->
+                    <div class="daily-header">
+                        <button class="nav-btn" id="prevDay">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <h5 class="daily-date">
+                            <i class="bi bi-calendar3"></i>
+                            <span id="currentDay">11/20 (水)</span>
+                        </h5>
+                        <button class="nav-btn" id="nextDay">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <!-- スクロール可能なコンテンツ -->
+                    <div class="daily-scroll-wrapper">
+                        <!-- 時間軸 -->
+                        <div class="time-axis">
+                            <div id="timeLabels"></div>
+                        </div>
+                        <!-- スケジュール欄 -->
+                        <div class="schedule-column">
+                            <div class="calendar-area" id="scheduleTimeline"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- メンバーカレンダー専用JavaScript -->
+    <script src="/js/Members_calendar.js"></script>
+    <!-- 初期化スクリプト -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function() {
+            var userId = /*[[${targetUser.id}]]*/ 1;
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('=== メンバーカレンダーページ初期化 ===');
+                console.log('ユーザーID:', userId);
+                console.log('initCalendar:', typeof initCalendar);
+                
+                if (typeof initCalendar === 'function') {
+                    initCalendar(userId, true);
+                } else {
+                    console.error('initCalendar関数が見つかりません');
+                }
+            });
+        })();
+        /*]]>*/
+    </script>
+</body>
+</html>

@@ -64,7 +64,7 @@ public class MembersCalendarController {
         model.addAttribute("targetUser", targetUser);
         model.addAttribute("currentUser", currentUser);
         
-        // 修正: テンプレート名をスネークケースに統一
+        // 正しいスペルに修正: members_calendar
         return "members_calendar";
     }
     
