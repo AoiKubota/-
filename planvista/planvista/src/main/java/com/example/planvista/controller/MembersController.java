@@ -11,9 +11,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
-/**
- * メンバー管理コントローラー
- */
+
 @Controller
 @RequestMapping("/members")
 public class MembersController {
@@ -27,15 +25,11 @@ public class MembersController {
         this.userRepository = userRepository;
     }
     
-    /**
-     * メンバー一覧ページ表示
-     */
+
     @GetMapping
     public String showMembers(HttpSession session, Model model) {
-        // セッションからユーザー情報を取得
         UserEntity currentUser = (UserEntity) session.getAttribute("user");
-        
-        // user オブジェクトがない場合は userId から取得を試みる
+
         if (currentUser == null) {
             Object userIdObj = session.getAttribute("userId");
             if (userIdObj != null) {
@@ -49,18 +43,15 @@ public class MembersController {
                         userId = Integer.parseInt(userIdObj.toString());
                     }
                     currentUser = userRepository.getById(userId);
-                    // セッションに保存
                     if (currentUser != null) {
                         session.setAttribute("user", currentUser);
                     }
                 } catch (Exception e) {
-                    // ログインページにリダイレクト
                     return "redirect:/login";
                 }
             }
         }
-        
-        // ログインしていない場合は空のリストを表示
+
         List<UserEntity> members = List.of();
         if (currentUser != null) {
             members = teamMemberService.getMembers(currentUser.getId());
@@ -72,10 +63,7 @@ public class MembersController {
         
         return "members";
     }
-    
-    /**
-     * メンバー追加処理
-     */
+
     @PostMapping("/add")
     public String addMember(@RequestParam String username,
                           @RequestParam String email,
@@ -108,10 +96,7 @@ public class MembersController {
         
         return "redirect:/members";
     }
-    
-    /**
-     * メンバー削除処理
-     */
+
     @PostMapping("/remove/{userId}")
     public String removeMember(@PathVariable Integer userId,
                              HttpSession session,
@@ -131,14 +116,10 @@ public class MembersController {
         
         return "redirect:/members";
     }
-    
-    /**
-     * セッションから現在のユーザーを取得するヘルパーメソッド
-     */
+
     private UserEntity getCurrentUser(HttpSession session) {
         UserEntity currentUser = (UserEntity) session.getAttribute("user");
-        
-        // user オブジェクトがない場合は userId から取得を試みる
+
         if (currentUser == null) {
             Object userIdObj = session.getAttribute("userId");
             if (userIdObj != null) {
@@ -152,7 +133,7 @@ public class MembersController {
                         userId = Integer.parseInt(userIdObj.toString());
                     }
                     currentUser = userRepository.getById(userId);
-                    // セッションに保存
+
                     if (currentUser != null) {
                         session.setAttribute("user", currentUser);
                     }

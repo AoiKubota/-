@@ -23,12 +23,7 @@ public class GoogleCalendarService {
     private static final String APPLICATION_NAME = "PlanVista";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     
-    /**
-     * Googleカレンダーからイベントを取得する
-     * @param accessToken OAuth2アクセストークン
-     * @return イベントのリスト
-     * @throws Exception エラー発生時
-     */
+
     public List<Event> getEvents(String accessToken) throws Exception {
         Calendar service = getCalendarService(accessToken);
         

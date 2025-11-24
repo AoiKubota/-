@@ -26,8 +26,7 @@ public class AiAnalysisService {
 
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
         LocalDateTime now = LocalDateTime.now();
-        
-        // スケジュール（手動登録 + Google同期）を取得
+
         List<ScheduleEntity> schedules = scheduleRepository.findByUserIdAndDateRange(userId, threeMonthsAgo, now);
         List<RecordEntity> records = recordRepository.findByUserIdAndDateRange(userId, threeMonthsAgo, now);
 
@@ -70,8 +69,7 @@ public class AiAnalysisService {
         if (schedules.isEmpty() || records.isEmpty()) {
             return 0.0;
         }
-        
-        // RecordEntityのscheduleIdでマッピング（eventId → scheduleIdに変更）
+
         Map<Long, RecordEntity> recordMap = records.stream()
                 .filter(r -> r.getScheduleId() != null)
                 .collect(Collectors.toMap(RecordEntity::getScheduleId, r -> r, (r1, r2) -> r1));
@@ -150,8 +148,7 @@ public class AiAnalysisService {
 
     private Map<String, TaskDelayInfo> analyzeTaskDelays(List<ScheduleEntity> schedules, List<RecordEntity> records) {
         Map<String, TaskDelayInfo> taskDelays = new HashMap<>();
-        
-        // RecordEntityのscheduleIdでマッピング
+
         Map<Long, RecordEntity> recordMap = records.stream()
                 .filter(r -> r.getScheduleId() != null)
                 .collect(Collectors.toMap(RecordEntity::getScheduleId, r -> r, (r1, r2) -> r1));

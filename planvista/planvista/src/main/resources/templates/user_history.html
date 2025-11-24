@@ -81,6 +81,42 @@
             margin-right: 10px;
         }
         
+        /* フィルターセクション */
+        .filter-section {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            background-color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .filter-btn:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .filter-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
         .timeline-container {
             background-color: white;
             border-radius: 15px;
@@ -146,44 +182,194 @@
         .timeline-type {
             font-weight: 600;
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .activity-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
         }
         
         .timeline-description {
             color: #666;
             font-size: 14px;
+            margin-bottom: 10px;
         }
         
+        .timeline-metadata {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .timeline-metadata i {
+            margin-right: 5px;
+        }
+        
+        /* アクティビティタイプ別スタイル */
+        
+        /* ログイン */
         .activity-type-login {
             border-left-color: #28a745 !important;
         }
-        
-        .activity-type-login .timeline-type {
-            color: #28a745;
+        .activity-type-login .timeline-item::before {
+            background-color: #28a745 !important;
+            box-shadow: 0 0 0 2px #28a745 !important;
+        }
+        .activity-type-login .activity-badge {
+            background-color: #d4edda;
+            color: #155724;
         }
         
+        /* ログアウト */
         .activity-type-logout {
             border-left-color: #6c757d !important;
         }
-        
-        .activity-type-logout .timeline-type {
-            color: #6c757d;
+        .activity-type-logout .timeline-item::before {
+            background-color: #6c757d !important;
+            box-shadow: 0 0 0 2px #6c757d !important;
+        }
+        .activity-type-logout .activity-badge {
+            background-color: #e2e3e5;
+            color: #383d41;
         }
         
-        .activity-type-schedule {
+        /* スケジュール作成 */
+        .activity-type-schedule-create {
             border-left-color: #007bff !important;
         }
-        
-        .activity-type-schedule .timeline-type {
-            color: #007bff;
+        .activity-type-schedule-create .timeline-item::before {
+            background-color: #007bff !important;
+            box-shadow: 0 0 0 2px #007bff !important;
+        }
+        .activity-type-schedule-create .activity-badge {
+            background-color: #cce5ff;
+            color: #004085;
         }
         
+        /* スケジュール更新 */
+        .activity-type-schedule-update {
+            border-left-color: #17a2b8 !important;
+        }
+        .activity-type-schedule-update .timeline-item::before {
+            background-color: #17a2b8 !important;
+            box-shadow: 0 0 0 2px #17a2b8 !important;
+        }
+        .activity-type-schedule-update .activity-badge {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        /* スケジュール削除 */
+        .activity-type-schedule-delete {
+            border-left-color: #dc3545 !important;
+        }
+        .activity-type-schedule-delete .timeline-item::before {
+            background-color: #dc3545 !important;
+            box-shadow: 0 0 0 2px #dc3545 !important;
+        }
+        .activity-type-schedule-delete .activity-badge {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Google同期 */
+        .activity-type-google {
+            border-left-color: #6f42c1 !important;
+        }
+        .activity-type-google .timeline-item::before {
+            background-color: #6f42c1 !important;
+            box-shadow: 0 0 0 2px #6f42c1 !important;
+        }
+        .activity-type-google .activity-badge {
+            background-color: #e7e1f5;
+            color: #4e2a84;
+        }
+        
+        /* パスワード関連 */
+        .activity-type-password {
+            border-left-color: #fd7e14 !important;
+        }
+        .activity-type-password .timeline-item::before {
+            background-color: #fd7e14 !important;
+            box-shadow: 0 0 0 2px #fd7e14 !important;
+        }
+        .activity-type-password .activity-badge {
+            background-color: #ffe5d0;
+            color: #7a3c00;
+        }
+        
+        /* タスク作成 */
+        .activity-type-task {
+            border-left-color: #20c997 !important;
+        }
+        .activity-type-task .timeline-item::before {
+            background-color: #20c997 !important;
+            box-shadow: 0 0 0 2px #20c997 !important;
+        }
+        .activity-type-task .activity-badge {
+            background-color: #d4f4e8;
+            color: #0c5d42;
+        }
+        
+        /* 作業記録 */
         .activity-type-record {
             border-left-color: #ffc107 !important;
         }
+        .activity-type-record .timeline-item::before {
+            background-color: #ffc107 !important;
+            box-shadow: 0 0 0 2px #ffc107 !important;
+        }
+        .activity-type-record .activity-badge {
+            background-color: #fff3cd;
+            color: #856404;
+        }
         
-        .activity-type-record .timeline-type {
-            color: #ffc107;
+        /* メンバー管理 */
+        .activity-type-member {
+            border-left-color: #e83e8c !important;
+        }
+        .activity-type-member .timeline-item::before {
+            background-color: #e83e8c !important;
+            box-shadow: 0 0 0 2px #e83e8c !important;
+        }
+        .activity-type-member .activity-badge {
+            background-color: #f7dae8;
+            color: #6b1843;
+        }
+        
+        /* AI分析・PDF */
+        .activity-type-analysis {
+            border-left-color: #6610f2 !important;
+        }
+        .activity-type-analysis .timeline-item::before {
+            background-color: #6610f2 !important;
+            box-shadow: 0 0 0 2px #6610f2 !important;
+        }
+        .activity-type-analysis .activity-badge {
+            background-color: #e7d9ff;
+            color: #3d0875;
+        }
+        
+        /* 管理者ログイン */
+        .activity-type-admin {
+            border-left-color: #dc3545 !important;
+        }
+        .activity-type-admin .timeline-item::before {
+            background-color: #dc3545 !important;
+            box-shadow: 0 0 0 2px #dc3545 !important;
+        }
+        .activity-type-admin .activity-badge {
+            background-color: #f8d7da;
+            color: #721c24;
         }
         
         .btn-back {
@@ -248,6 +434,20 @@
             gap: 15px;
             margin-top: 30px;
         }
+        
+        @media (max-width: 768px) {
+            .timeline {
+                padding-left: 30px;
+            }
+            
+            .timeline::before {
+                left: 10px;
+            }
+            
+            .timeline-item::before {
+                left: -25px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -305,6 +505,37 @@
             </div>
         </div>
         
+        <!-- フィルターセクション -->
+        <div class="filter-section" th:if="${activities != null && !activities.isEmpty()}">
+            <h6 class="mb-3"><i class="bi bi-funnel"></i> アクティビティタイプでフィルター</h6>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="bi bi-list-ul"></i> すべて
+                </button>
+                <button class="filter-btn" data-filter="ログイン">
+                    <i class="bi bi-box-arrow-in-right"></i> ログイン
+                </button>
+                <button class="filter-btn" data-filter="スケジュール">
+                    <i class="bi bi-calendar-event"></i> スケジュール
+                </button>
+                <button class="filter-btn" data-filter="タスク">
+                    <i class="bi bi-list-task"></i> タスク
+                </button>
+                <button class="filter-btn" data-filter="Google">
+                    <i class="bi bi-google"></i> Google同期
+                </button>
+                <button class="filter-btn" data-filter="パスワード">
+                    <i class="bi bi-key"></i> パスワード
+                </button>
+                <button class="filter-btn" data-filter="メンバー">
+                    <i class="bi bi-people"></i> メンバー
+                </button>
+                <button class="filter-btn" data-filter="AI">
+                    <i class="bi bi-graph-up"></i> AI分析
+                </button>
+            </div>
+        </div>
+        
         <!-- アクティビティタイムライン -->
         <div class="timeline-container">
             <h2 class="timeline-title">
@@ -313,7 +544,8 @@
             
             <div th:if="${activities != null && !activities.isEmpty()}">
                 <div class="timeline">
-                    <div class="timeline-item" th:each="activity : ${activities}">
+                    <div class="timeline-item" th:each="activity : ${activities}"
+                         th:attr="data-activity-type=${activity.activityType}">
                         <div class="timeline-date">
                             <i class="bi bi-calendar3"></i>
                             <span th:text="${#temporals.format(activity.createdAt, 'yyyy/MM/dd HH:mm:ss')}"></span>
@@ -321,19 +553,51 @@
                         <div class="timeline-content"
                              th:classappend="${activity.activityType == 'ログイン'} ? 'activity-type-login' :
                                            ${activity.activityType == 'ログアウト'} ? 'activity-type-logout' :
-                                           ${activity.activityType.contains('スケジュール')} ? 'activity-type-schedule' :
-                                           ${activity.activityType.contains('記録')} ? 'activity-type-record' : ''">
+                                           ${activity.activityType == '管理者ログイン'} ? 'activity-type-admin' :
+                                           ${activity.activityType == 'スケジュール作成'} ? 'activity-type-schedule-create' :
+                                           ${activity.activityType == 'スケジュール更新'} ? 'activity-type-schedule-update' :
+                                           ${activity.activityType == 'スケジュール削除'} ? 'activity-type-schedule-delete' :
+                                           ${activity.activityType == 'Googleカレンダー同期'} ? 'activity-type-google' :
+                                           ${activity.activityType.contains('パスワード')} ? 'activity-type-password' :
+                                           ${activity.activityType == 'タスク作成'} ? 'activity-type-task' :
+                                           ${activity.activityType.contains('作業記録')} ? 'activity-type-record' :
+                                           ${activity.activityType.contains('メンバー')} ? 'activity-type-member' :
+                                           ${activity.activityType.contains('AI') or activity.activityType.contains('PDF')} ? 'activity-type-analysis' : ''">
+                            
                             <div class="timeline-type">
+                                <span class="activity-badge" th:text="${activity.activityType}"></span>
                                 <i class="bi"
                                    th:classappend="${activity.activityType == 'ログイン'} ? 'bi-box-arrow-in-right' :
                                                  ${activity.activityType == 'ログアウト'} ? 'bi-box-arrow-left' :
-                                                 ${activity.activityType.contains('スケジュール')} ? 'bi-calendar-event' :
-                                                 ${activity.activityType.contains('記録')} ? 'bi-pencil-square' : 'bi-info-circle'">
+                                                 ${activity.activityType == '管理者ログイン'} ? 'bi-shield-lock' :
+                                                 ${activity.activityType == 'スケジュール作成'} ? 'bi-calendar-plus' :
+                                                 ${activity.activityType == 'スケジュール更新'} ? 'bi-calendar-check' :
+                                                 ${activity.activityType == 'スケジュール削除'} ? 'bi-calendar-x' :
+                                                 ${activity.activityType == 'Googleカレンダー同期'} ? 'bi-google' :
+                                                 ${activity.activityType.contains('パスワード')} ? 'bi-key' :
+                                                 ${activity.activityType == 'タスク作成'} ? 'bi-plus-circle' :
+                                                 ${activity.activityType.contains('作業記録')} ? 'bi-pencil-square' :
+                                                 ${activity.activityType.contains('メンバー')} ? 'bi-people' :
+                                                 ${activity.activityType.contains('AI')} ? 'bi-graph-up' :
+                                                 ${activity.activityType.contains('PDF')} ? 'bi-file-earmark-pdf' : 'bi-info-circle'">
                                 </i>
-                                <span th:text="${activity.activityType}"></span>
                             </div>
+                            
                             <div class="timeline-description" th:if="${activity.activityDescription != null}">
                                 <span th:text="${activity.activityDescription}"></span>
+                            </div>
+                            
+                            <div class="timeline-metadata">
+                                <div th:if="${activity.ipAddress != null}">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <strong>IPアドレス:</strong>
+                                    <span th:text="${activity.ipAddress}"></span>
+                                </div>
+                                <div th:if="${activity.userAgent != null}" style="margin-top: 5px;">
+                                    <i class="bi bi-laptop"></i>
+                                    <strong>デバイス:</strong>
+                                    <span th:text="${activity.userAgent}"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -342,7 +606,10 @@
                 <div class="mt-3 text-end text-muted">
                     <small>
                         <i class="bi bi-info-circle"></i> 
-                        合計 <strong th:text="${activities.size()}"></strong> 件のアクティビティ
+                        合計 <strong><span id="totalCount" th:text="${activities.size()}"></span></strong> 件のアクティビティ
+                        <span id="filteredCount" style="display:none;">
+                            (<span id="filteredNumber"></span>件を表示中)
+                        </span>
                     </small>
                 </div>
             </div>
@@ -409,5 +676,50 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- フィルター機能のJavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            const totalCountElement = document.getElementById('totalCount');
+            const filteredCountElement = document.getElementById('filteredCount');
+            const filteredNumberElement = document.getElementById('filteredNumber');
+            const totalCount = timelineItems.length;
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // アクティブ状態を切り替え
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const filter = this.getAttribute('data-filter');
+                    let visibleCount = 0;
+                    
+                    timelineItems.forEach(item => {
+                        const activityType = item.getAttribute('data-activity-type');
+                        
+                        if (filter === 'all') {
+                            item.style.display = '';
+                            visibleCount++;
+                        } else if (activityType.includes(filter)) {
+                            item.style.display = '';
+                            visibleCount++;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // カウント表示を更新
+                    if (filter === 'all') {
+                        filteredCountElement.style.display = 'none';
+                    } else {
+                        filteredNumberElement.textContent = visibleCount;
+                        filteredCountElement.style.display = 'inline';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

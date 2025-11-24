@@ -15,9 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * メンバーカレンダーAPI用コントローラー
- */
 @RestController
 @RequestMapping("/api/members_calendar")
 public class MembersCalendarApiController {
@@ -30,17 +27,13 @@ public class MembersCalendarApiController {
         this.scheduleRepository = scheduleRepository;
         this.teamMemberService = teamMemberService;
     }
-    
-    /**
-     * 指定ユーザーの月間スケジュールを取得
-     */
+
     @GetMapping("/{userId}/schedules")
     public ResponseEntity<?> getMemberSchedules(
             @PathVariable Integer userId,
             @RequestParam String yearMonth,
             HttpSession session) {
-        
-        // ログインユーザーを取得
+
         UserEntity currentUser = (UserEntity) session.getAttribute("user");
         if (currentUser == null) {
             Object userIdObj = session.getAttribute("userId");
@@ -49,19 +42,16 @@ public class MembersCalendarApiController {
                         .body(Map.of("error", "ログインが必要です"));
             }
         }
-        
-        // 閲覧権限チェック
+
         if (!teamMemberService.canViewMember(currentUser.getId(), userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "閲覧権限がありません"));
         }
         
         try {
-            // 年月をパース
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
             LocalDate date = LocalDate.parse(yearMonth + "-01", DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             
-            // その月のスケジュールを取得
             List<ScheduleEntity> schedules = scheduleRepository.findByUserIdAndMonth(
                     userId,
                     date.getYear(),
@@ -80,17 +70,13 @@ public class MembersCalendarApiController {
                     .body(Map.of("error", "スケジュールの取得に失敗しました: " + e.getMessage()));
         }
     }
-    
-    /**
-     * 指定ユーザーの日別スケジュールを取得
-     */
+
     @GetMapping("/{userId}/schedules/day")
     public ResponseEntity<?> getMemberDaySchedules(
             @PathVariable Integer userId,
             @RequestParam String date,
             HttpSession session) {
-        
-        // ログインユーザーを取得
+
         UserEntity currentUser = (UserEntity) session.getAttribute("user");
         if (currentUser == null) {
             Object userIdObj = session.getAttribute("userId");
@@ -99,18 +85,15 @@ public class MembersCalendarApiController {
                         .body(Map.of("error", "ログインが必要です"));
             }
         }
-        
-        // 閲覧権限チェック
+
         if (!teamMemberService.canViewMember(currentUser.getId(), userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "閲覧権限がありません"));
         }
         
         try {
-            // 日付をパース
             LocalDate targetDate = LocalDate.parse(date);
-            
-            // その日のスケジュールを取得
+
             List<ScheduleEntity> schedules = scheduleRepository.findByUserIdAndDate(
                     userId,
                     targetDate

@@ -21,15 +21,7 @@ public class Pdfexportservice {
         this.templateEngine = templateEngine;
     }
 
-    /**
-     * AI分析結果をPDFとして生成
-     * 
-     * @param outputStream 出力先ストリーム
-     * @param taskAverageTimes タスク別平均時間
-     * @param accuracy スケジュール正確度
-     * @param feedbacks フィードバックリスト
-     * @throws Exception PDF生成エラー
-     */
+
     public void generateAiAnalysisPdf(
             OutputStream outputStream,
             Map<String, String> taskAverageTimes,

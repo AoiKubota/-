@@ -58,13 +58,9 @@ public class AiAnalysisController {
         }
     }
     
-    /**
-     * AI分析結果をPDF形式でエクスポート
-     */
     @GetMapping("/ai_analysis/export")
     public void exportPdf(HttpServletResponse response, HttpSession session) {
-        
-        // ユーザーIDの取得
+
         Object userIdObj = session.getAttribute("userId");
         if (userIdObj == null) {
             try {
@@ -90,7 +86,6 @@ public class AiAnalysisController {
         }
         
         try {
-            // AI分析データの取得
             Map<String, Object> analysisResult = aiAnalysisService.getAnalysisForUser(userId);
             
             @SuppressWarnings("unchecked")
@@ -98,16 +93,13 @@ public class AiAnalysisController {
             Long accuracy = (Long) analysisResult.get("accuracy");
             @SuppressWarnings("unchecked")
             List<String> feedbacks = (List<String>) analysisResult.get("feedbacks");
-            
-            // ファイル名を生成（日時付き）
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
             String filename = "ai_analysis_" + LocalDateTime.now().format(formatter) + ".pdf";
-            
-            // レスポンスヘッダーの設定
+
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-            
-            // PDF生成
+
             pdfExportService.generateAiAnalysisPdf(
                     response.getOutputStream(),
                     taskAverageTimes,

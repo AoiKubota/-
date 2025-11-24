@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>403 - アクセス拒否 - PlanVista</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #434343;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .logo:hover {
+            color: #0d6efd;
+        }
+        
+        .error-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .error-content {
+            background-color: white;
+            border-radius: 15px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .error-icon {
+            font-size: 120px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        
+        .error-code {
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .error-title {
+            font-size: 28px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .error-message {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-back {
+            background-color: #6c757d;
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-back:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .error-icon {
+                font-size: 80px;
+            }
+            
+            .error-code {
+                font-size: 36px;
+            }
+            
+            .error-title {
+                font-size: 22px;
+            }
+            
+            .error-content {
+                padding: 30px 20px;
+            }
+            
+            .btn-home, .btn-back {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="header">
+        <div class="container">
+            <a href="/main" class="logo">
+                <i class="bi bi-calendar-check"></i> PlanVista
+            </a>
+        </div>
+    </div>
+
+    <!-- エラーコンテンツ -->
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+            <div class="error-code">403</div>
+            <div class="error-title">アクセスが拒否されました</div>
+            <div class="error-message">
+                このページへのアクセス権限がありません。<br>
+                管理者権限が必要なページ、または他のユーザーの情報にアクセスしようとしている可能性があります。
+            </div>
+            <div>
+                <a href="/main" class="btn-home">
+                    <i class="bi bi-house"></i> ホームに戻る
+                </a>
+                <a href="javascript:history.back()" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> 前のページに戻る
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -2,9 +2,8 @@ package com.example.planvista.controller;
 
 import com.example.planvista.model.entity.ScheduleEntity;
 import com.example.planvista.model.entity.TaskEntity;
-import com.example.planvista.model.entity.UserActivityEntity;
-import com.example.planvista.repository.UserActivityRepository;
 import com.example.planvista.service.ScheduleService;
+import com.example.planvista.service.UserActivityService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * スケジュール管理コントローラー
- * スケジュールの登録・編集・削除機能を提供
- */
+
 @Controller
 public class ScheduleController {
 
@@ -32,47 +28,19 @@ public class ScheduleController {
     private ScheduleService scheduleService;
     
     @Autowired
-    private UserActivityRepository userActivityRepository;
+    private UserActivityService userActivityService;
 
-    /**
-     * ユーザーアクティビティを記録するヘルパーメソッド
-     */
-    private void logActivity(Integer userId, String activityType, String description, HttpServletRequest request) {
-        try {
-            UserActivityEntity activity = new UserActivityEntity();
-            activity.setUserId(userId);
-            activity.setActivityType(activityType);
-            activity.setActivityDescription(description);
-            
-            if (request != null) {
-                activity.setIpAddress(request.getRemoteAddr());
-                activity.setUserAgent(request.getHeader("User-Agent"));
-            }
-            
-            userActivityRepository.create(activity);
-        } catch (Exception e) {
-            // アクティビティログの記録失敗は処理を中断しない
-            System.err.println("アクティビティログ記録エラー: " + e.getMessage());
-        }
-    }
-
-    /**
-     * スケジュール登録画面を表示
-     */
     @GetMapping("/schedule_add")
     public String showScheduleAddForm(HttpSession session, Model model,
                                      @RequestParam(required = false) String date) {
-        // ログインチェック
         Long userId = getUserIdAsLong(session);
         if (userId == null) {
             return "redirect:/login";
         }
-        
-        // タスク一覧を取得
+
         List<TaskEntity> tasks = scheduleService.getUserTasks(userId);
         model.addAttribute("tasks", tasks);
 
-        // 日付が指定されている場合はセット
         if (date != null && !date.isEmpty()) {
             model.addAttribute("selectedDate", date);
         } else {
@@ -82,9 +50,6 @@ public class ScheduleController {
         return "schedule_add";
     }
 
-    /**
-     * スケジュールを登録
-     */
     @PostMapping("/schedule_add")
     public String addSchedule(HttpSession session,
                             HttpServletRequest request,
@@ -96,7 +61,6 @@ public class ScheduleController {
                             @RequestParam(value = "memo", required = false) String memo,
                             RedirectAttributes redirectAttributes) {
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 return "redirect:/login";
@@ -111,19 +75,16 @@ public class ScheduleController {
             System.out.println("task: " + task);
             System.out.println("memo: " + memo);
 
-            // 入力値バリデーション
             if (scheduleName == null || scheduleName.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "スケジュール名を入力してください");
                 return "redirect:/schedule_add?date=" + date;
             }
 
-            // スケジュールエンティティを作成
             ScheduleEntity schedule = new ScheduleEntity();
             schedule.setUserId(userId);
             schedule.setTitle(scheduleName.trim());
             schedule.setTask(task);
-            
-            // 日時を解析
+
             LocalDateTime startDateTime = LocalDateTime.parse(date + "T" + startTime);
             LocalDateTime endDateTime = LocalDateTime.parse(date + "T" + endTime);
             
@@ -131,20 +92,16 @@ public class ScheduleController {
             schedule.setEndTime(endDateTime);
             schedule.setMemo(memo != null ? memo.trim() : null);
 
-            // バリデーション
             if (!scheduleService.validateSchedule(schedule)) {
                 redirectAttributes.addFlashAttribute("error", "入力内容に誤りがあります。終了時刻は開始時刻より後に設定してください。");
                 return "redirect:/schedule_add?date=" + date;
             }
 
-            // スケジュールを保存（手動登録）
             ScheduleEntity savedSchedule = scheduleService.createManualSchedule(schedule);
             System.out.println("保存されたスケジュールID: " + savedSchedule.getId());
             System.out.println("=== スケジュール登録完了 ===");
-            
-            // アクティビティログを記録
-            logActivity(userId.intValue(), "スケジュール登録", 
-                "スケジュール「" + scheduleName.trim() + "」を登録しました", request);
+
+            userActivityService.logScheduleCreate(userId.intValue(), scheduleName.trim(), request);
 
             redirectAttributes.addFlashAttribute("success", "スケジュールを登録しました");
             return "redirect:/calendar";
@@ -157,16 +114,11 @@ public class ScheduleController {
         }
     }
 
-    /**
-     * スケジュール編集画面を表示
-     * Google同期スケジュールは編集不可
-     */
     @GetMapping("/schedule_update")
     public String showScheduleUpdateForm(HttpSession session,
                                         @RequestParam("id") Long scheduleId,
                                         Model model,
                                         RedirectAttributes redirectAttributes) {
-        // ログインチェック
         Long userId = getUserIdAsLong(session);
         if (userId == null) {
             return "redirect:/login";
@@ -176,7 +128,6 @@ public class ScheduleController {
         System.out.println("scheduleId: " + scheduleId);
         System.out.println("userId: " + userId);
 
-        // スケジュールを取得
         Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
         if (!scheduleOpt.isPresent()) {
             redirectAttributes.addFlashAttribute("error", "スケジュールが見つかりません");
@@ -184,8 +135,7 @@ public class ScheduleController {
         }
         
         ScheduleEntity schedule = scheduleOpt.get();
-        
-        // Google同期スケジュールは編集不可
+
         if (schedule.getIsSyncedFromGoogle() != null && schedule.getIsSyncedFromGoogle()) {
             redirectAttributes.addFlashAttribute("error", "Googleカレンダーから同期されたスケジュールは編集できません");
             return "redirect:/calendar";
@@ -193,44 +143,35 @@ public class ScheduleController {
 
         model.addAttribute("schedule", schedule);
 
-        // タスク一覧を取得
         List<TaskEntity> tasks = scheduleService.getUserTasks(userId);
         model.addAttribute("tasks", tasks);
 
-        // 日付と時刻を分割してモデルに追加
         model.addAttribute("date", schedule.getStartTime().toLocalDate().toString());
         model.addAttribute("startTime", schedule.getStartTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         model.addAttribute("endTime", schedule.getEndTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
 
-        // 推測所要時間を取得
         if (schedule.getTask() != null && !schedule.getTask().isEmpty()) {
             Map<String, String> estimatedTime = scheduleService.getEstimatedTaskTime(userId, schedule.getTask());
             model.addAttribute("estimatedTime", estimatedTime.get("estimatedTime"));
         } else {
-            model.addAttribute("estimatedTime", "--:--");
+            model.addAttribute("estimatedTime", "00:30");
         }
 
-        System.out.println("スケジュール編集画面を表示: " + schedule.getTitle());
         return "schedule_update";
     }
 
-    /**
-     * スケジュールを更新
-     * Google同期スケジュールは更新不可
-     */
     @PostMapping("/schedule_update")
     public String updateSchedule(HttpSession session,
-                               HttpServletRequest request,
-                               @RequestParam("scheduleId") Long scheduleId,
-                               @RequestParam("scheduleName") String scheduleName,
-                               @RequestParam("date") String date,
-                               @RequestParam("startTime") String startTime,
-                               @RequestParam("endTime") String endTime,
-                               @RequestParam("task") String task,
-                               @RequestParam(value = "memo", required = false) String memo,
-                               RedirectAttributes redirectAttributes) {
+                                HttpServletRequest request,
+                                @RequestParam("scheduleId") Long scheduleId,
+                                @RequestParam("scheduleName") String scheduleName,
+                                @RequestParam("date") String date,
+                                @RequestParam("startTime") String startTime,
+                                @RequestParam("endTime") String endTime,
+                                @RequestParam("task") String task,
+                                @RequestParam(value = "memo", required = false) String memo,
+                                RedirectAttributes redirectAttributes) {
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 return "redirect:/login";
@@ -238,39 +179,24 @@ public class ScheduleController {
 
             System.out.println("=== スケジュール更新開始 ===");
             System.out.println("scheduleId: " + scheduleId);
-            System.out.println("userId: " + userId);
             System.out.println("scheduleName: " + scheduleName);
-            System.out.println("date: " + date);
-            System.out.println("startTime: " + startTime);
-            System.out.println("endTime: " + endTime);
-            System.out.println("task: " + task);
 
-            // 入力値バリデーション
             if (scheduleName == null || scheduleName.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "スケジュール名を入力してください");
                 return "redirect:/schedule_update?id=" + scheduleId;
             }
 
-            // 既存のスケジュールを取得
             Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
             if (!scheduleOpt.isPresent()) {
                 redirectAttributes.addFlashAttribute("error", "スケジュールが見つかりません");
                 return "redirect:/calendar";
             }
-            
-            ScheduleEntity schedule = scheduleOpt.get();
-            
-            // Google同期スケジュールは編集不可
-            if (schedule.getIsSyncedFromGoogle() != null && schedule.getIsSyncedFromGoogle()) {
-                redirectAttributes.addFlashAttribute("error", "Googleカレンダーから同期されたスケジュールは編集できません");
-                return "redirect:/calendar";
-            }
 
-            // スケジュール情報を更新
+            ScheduleEntity schedule = scheduleOpt.get();
+
             schedule.setTitle(scheduleName.trim());
             schedule.setTask(task);
-            
-            // 日時を解析
+
             LocalDateTime startDateTime = LocalDateTime.parse(date + "T" + startTime);
             LocalDateTime endDateTime = LocalDateTime.parse(date + "T" + endTime);
             
@@ -278,26 +204,20 @@ public class ScheduleController {
             schedule.setEndTime(endDateTime);
             schedule.setMemo(memo != null ? memo.trim() : null);
 
-            // バリデーション
             if (!scheduleService.validateSchedule(schedule)) {
                 redirectAttributes.addFlashAttribute("error", "入力内容に誤りがあります。終了時刻は開始時刻より後に設定してください。");
                 return "redirect:/schedule_update?id=" + scheduleId;
             }
 
-            // スケジュールを更新
-            ScheduleEntity updatedSchedule = scheduleService.updateManualSchedule(schedule);
-            System.out.println("スケジュール更新完了: ID=" + updatedSchedule.getId());
+            scheduleService.updateManualSchedule(schedule);
             System.out.println("=== スケジュール更新完了 ===");
-            
-            // アクティビティログを記録
-            logActivity(userId.intValue(), "スケジュール編集", 
-                "スケジュール「" + scheduleName.trim() + "」を編集しました", request);
+
+            userActivityService.logScheduleUpdate(userId.intValue(), scheduleName.trim(), request);
 
             redirectAttributes.addFlashAttribute("success", "スケジュールを更新しました");
             return "redirect:/calendar";
 
         } catch (IllegalStateException e) {
-            // Google同期スケジュールの更新を試みた場合
             System.err.println("スケジュール更新エラー: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/calendar";
@@ -309,17 +229,12 @@ public class ScheduleController {
         }
     }
 
-    /**
-     * スケジュールを削除（論理削除）- リダイレクト版
-     * Google同期スケジュールは削除不可
-     */
     @PostMapping("/schedule_delete")
     public String deleteSchedule(HttpSession session,
                                HttpServletRequest request,
                                @RequestParam("scheduleId") Long scheduleId,
                                RedirectAttributes redirectAttributes) {
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 return "redirect:/login";
@@ -328,20 +243,16 @@ public class ScheduleController {
             System.out.println("=== スケジュール削除開始 ===");
             System.out.println("scheduleId: " + scheduleId);
             System.out.println("userId: " + userId);
-            
-            // 削除前にスケジュール名を取得
+
             Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
             String scheduleName = scheduleOpt.map(ScheduleEntity::getTitle).orElse("不明");
 
-            // 論理削除を実行
             boolean deleted = scheduleService.deleteSchedule(scheduleId, userId);
             
             if (deleted) {
                 System.out.println("スケジュール削除完了: ID=" + scheduleId);
-                
-                // アクティビティログを記録
-                logActivity(userId.intValue(), "スケジュール削除", 
-                    "スケジュール「" + scheduleName + "」を削除しました", request);
+
+                userActivityService.logScheduleDelete(userId.intValue(), scheduleName, request);
                 
                 redirectAttributes.addFlashAttribute("success", "スケジュールを削除しました");
             } else {
@@ -352,7 +263,6 @@ public class ScheduleController {
             return "redirect:/calendar";
 
         } catch (IllegalStateException e) {
-            // Google同期スケジュールの削除を試みた場合
             System.err.println("スケジュール削除エラー: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/calendar";
@@ -364,10 +274,6 @@ public class ScheduleController {
         }
     }
 
-    /**
-     * スケジュールを削除（論理削除）- Ajax用JSON版
-     * Google同期スケジュールは削除不可
-     */
     @PostMapping("/schedule_delete/{scheduleId}")
     @ResponseBody
     public Map<String, Object> deleteScheduleAjax(HttpSession session,
@@ -376,7 +282,6 @@ public class ScheduleController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -387,20 +292,16 @@ public class ScheduleController {
             System.out.println("=== スケジュール削除開始(Ajax) ===");
             System.out.println("scheduleId: " + scheduleId);
             System.out.println("userId: " + userId);
-            
-            // 削除前にスケジュール名を取得
+
             Optional<ScheduleEntity> scheduleOpt = scheduleService.getScheduleById(scheduleId, userId);
             String scheduleName = scheduleOpt.map(ScheduleEntity::getTitle).orElse("不明");
 
-            // 論理削除を実行
             boolean deleted = scheduleService.deleteSchedule(scheduleId, userId);
             
             if (deleted) {
                 System.out.println("スケジュール削除完了: ID=" + scheduleId);
-                
-                // アクティビティログを記録
-                logActivity(userId.intValue(), "スケジュール削除", 
-                    "スケジュール「" + scheduleName + "」を削除しました", request);
+
+                userActivityService.logScheduleDelete(userId.intValue(), scheduleName, request);
                 
                 response.put("success", true);
                 response.put("message", "スケジュールを削除しました");
@@ -425,17 +326,14 @@ public class ScheduleController {
         return response;
     }
 
-    /**
-     * 新しいタスクを作成(Ajax用)
-     */
     @PostMapping("/task_add")
     @ResponseBody
     public Map<String, Object> addTask(HttpSession session,
+                                      HttpServletRequest request,
                                       @RequestParam("taskName") String taskName) {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -450,6 +348,8 @@ public class ScheduleController {
             }
             
             TaskEntity task = scheduleService.createTask(taskName.trim(), userId);
+
+            userActivityService.logTaskCreate(userId.intValue(), taskName.trim(), request);
 
             response.put("success", true);
             response.put("task", task);
@@ -468,9 +368,6 @@ public class ScheduleController {
         return response;
     }
 
-    /**
-     * タスクの推測時間を取得(Ajax用)
-     */
     @GetMapping("/api/estimated_time")
     @ResponseBody
     public Map<String, String> getEstimatedTime(HttpSession session,
@@ -484,11 +381,7 @@ public class ScheduleController {
 
         return scheduleService.getEstimatedTaskTime(userId, taskName);
     }
-    
-    /**
-     * userIdをLongとして取得するヘルパーメソッド
-     * セッションのuserIdをInteger/Long/Stringから統一的にLongに変換
-     */
+
     private Long getUserIdAsLong(HttpSession session) {
         Object userIdObj = session.getAttribute("userId");
         if (userIdObj == null) {

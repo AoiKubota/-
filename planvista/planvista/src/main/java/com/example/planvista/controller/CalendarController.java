@@ -16,10 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * カレンダー表示コントローラー
- * スケジュール（手動登録+Google同期）を統合表示
- */
+
 @Controller
 public class CalendarController {
     
@@ -34,8 +31,7 @@ public class CalendarController {
         }
 
         Long userIdLong;
-        
-        // userIdの型を統一的に処理
+
         if (userIdObj instanceof Integer) {
             userIdLong = ((Integer) userIdObj).longValue();
         } else if (userIdObj instanceof Long) {
@@ -46,17 +42,14 @@ public class CalendarController {
 
         LocalDate today = LocalDate.now();
 
-        // 3ヶ月前から3ヶ月後までの範囲を設定
         LocalDate threeMonthsAgo = today.minusMonths(3);
         LocalDateTime startDate = threeMonthsAgo.withDayOfMonth(1).atStartOfDay();
 
         LocalDate threeMonthsLater = today.plusMonths(3);
         LocalDateTime endDate = threeMonthsLater.withDayOfMonth(threeMonthsLater.lengthOfMonth()).atTime(23, 59, 59);
 
-        // 全てのスケジュール（手動登録 + Google同期）を取得
         List<ScheduleEntity> schedules = scheduleService.getSchedulesByDateRange(userIdLong, startDate, endDate);
 
-        // スケジュールをカレンダー表示用のマップに変換
         List<Map<String, Object>> eventList = new ArrayList<>();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         
@@ -73,25 +66,22 @@ public class CalendarController {
             scheduleMap.put("memo", schedule.getMemo() != null ? schedule.getMemo() : "");
             scheduleMap.put("task", schedule.getTask() != null ? schedule.getTask() : "");
             scheduleMap.put("taskTime", schedule.getTaskTime() != null ? schedule.getTaskTime() : 0);
-            
-            // Google同期かどうかを判定
+
             scheduleMap.put("isSyncedFromGoogle", schedule.getIsSyncedFromGoogle());
-            
-            // タイプを設定（UIでの区別用）
+
             if (schedule.getIsSyncedFromGoogle()) {
-                scheduleMap.put("type", "google");  // Google同期スケジュール
-                scheduleMap.put("editable", false);  // 編集不可
-                scheduleMap.put("deletable", false); // 削除不可
+                scheduleMap.put("type", "google");  
+                scheduleMap.put("editable", false); 
+                scheduleMap.put("deletable", false); 
             } else {
-                scheduleMap.put("type", "schedule"); // 手動登録スケジュール
-                scheduleMap.put("editable", true);   // 編集可能
-                scheduleMap.put("deletable", true);  // 削除可能
+                scheduleMap.put("type", "schedule"); 
+                scheduleMap.put("editable", true);   
+                scheduleMap.put("deletable", true);  
             }
             
             eventList.add(scheduleMap);
         }
-        
-        // 開始時刻でソート
+
         eventList.sort((a, b) -> {
             String dateA = (String) a.get("date");
             String dateB = (String) b.get("date");

@@ -13,10 +13,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Googleカレンダー非同期同期サービス
- * GoogleCalendarSyncServiceを非同期で実行
- */
 @Service
 public class GoogleCalendarAsyncService {
     
@@ -26,12 +22,7 @@ public class GoogleCalendarAsyncService {
     @Autowired
     private ScheduleService scheduleService;
     
-    /**
-     * Googleカレンダーからイベントを非同期で同期する
-     * @param accessToken Google OAuth2アクセストークン
-     * @param userId ユーザーID
-     * @return 同期結果（同期件数、スキップ件数）
-     */
+
     @Async("googleCalendarTaskExecutor")
     public CompletableFuture<SyncResult> syncEventsAsync(String accessToken, Long userId) {
         try {

@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/**
- * メンバーカレンダーコントローラー
- */
+
 @Controller
 @RequestMapping("/members_calendar")
 public class MembersCalendarController {
@@ -27,9 +25,7 @@ public class MembersCalendarController {
         this.userRepository = userRepository;
     }
     
-    /**
-     * メンバーのカレンダーページ表示
-     */
+
     @GetMapping("/{userId}")
     public String showMemberCalendar(@PathVariable Integer userId,
                                     HttpSession session,
@@ -40,8 +36,7 @@ public class MembersCalendarController {
             redirectAttributes.addFlashAttribute("error", "ログインが必要です");
             return "redirect:/login";
         }
-        
-        // 対象のユーザーを取得
+
         UserEntity targetUser;
         try {
             targetUser = userRepository.getById(userId);
@@ -54,8 +49,7 @@ public class MembersCalendarController {
             redirectAttributes.addFlashAttribute("error", "ユーザーが見つかりません");
             return "redirect:/members";
         }
-        
-        // 閲覧権限をチェック
+
         if (!teamMemberService.canViewMember(currentUser.getId(), userId)) {
             redirectAttributes.addFlashAttribute("error", "このユーザーのカレンダーを閲覧する権限がありません");
             return "redirect:/members";
@@ -63,18 +57,14 @@ public class MembersCalendarController {
         
         model.addAttribute("targetUser", targetUser);
         model.addAttribute("currentUser", currentUser);
-        
-        // 正しいスペルに修正: members_calendar
+
         return "members_calendar";
     }
     
-    /**
-     * セッションから現在のユーザーを取得するヘルパーメソッド
-     */
+
     private UserEntity getCurrentUser(HttpSession session) {
         UserEntity currentUser = (UserEntity) session.getAttribute("user");
-        
-        // user オブジェクトがない場合は userId から取得を試みる
+
         if (currentUser == null) {
             Object userIdObj = session.getAttribute("userId");
             if (userIdObj != null) {
@@ -88,7 +78,6 @@ public class MembersCalendarController {
                         userId = Integer.parseInt(userIdObj.toString());
                     }
                     currentUser = userRepository.getById(userId);
-                    // セッションに保存
                     if (currentUser != null) {
                         session.setAttribute("user", currentUser);
                     }

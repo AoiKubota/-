@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * MainController - メインページ(/main)のコントローラー
- * 本日のスケジュールとレコードを表示し、レコード記録機能を提供
- */
 @Controller
 public class MainController {
 
@@ -36,13 +32,8 @@ public class MainController {
     @Autowired
     private TaskService taskService;
 
-    /**
-     * メインページ表示
-     * 今日のスケジュールとレコードを取得
-     */
     @GetMapping("/main")
     public String showMain(HttpSession session, Model model) {
-        // ログインチェック
         Long userId = getUserIdAsLong(session);
         if (userId == null) {
             return "redirect:/login";
@@ -51,20 +42,16 @@ public class MainController {
         System.out.println("=== メインページ表示 ===");
         System.out.println("userId: " + userId);
 
-        // 今日の日付
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
 
-        // 今日のスケジュールを取得
         List<ScheduleEntity> schedules = scheduleService.getSchedulesByDateRange(userId, startOfDay, endOfDay);
         System.out.println("取得したスケジュール数: " + schedules.size());
 
-        // 今日のレコードを取得
         List<RecordEntity> records = recordService.getRecordsByUserAndDate(userId, today);
         System.out.println("取得したレコード数: " + records.size());
 
-        // スケジュールをJSON形式に変換
         List<Map<String, Object>> scheduleList = new ArrayList<>();
         for (ScheduleEntity schedule : schedules) {
             Map<String, Object> scheduleMap = new HashMap<>();
@@ -80,7 +67,6 @@ public class MainController {
             scheduleList.add(scheduleMap);
         }
 
-        // レコードをJSON形式に変換
         List<Map<String, Object>> recordList = new ArrayList<>();
         for (RecordEntity record : records) {
             Map<String, Object> recordMap = new HashMap<>();
@@ -94,11 +80,9 @@ public class MainController {
             recordList.add(recordMap);
         }
 
-        // タスク一覧を取得（ScheduleServiceから取得）
         List<TaskEntity> tasks = scheduleService.getUserTasks(userId);
         System.out.println("取得したタスク数: " + tasks.size());
 
-        // モデルに追加
         model.addAttribute("schedules", scheduleList);
         model.addAttribute("records", recordList);
         model.addAttribute("tasks", tasks);
@@ -109,10 +93,6 @@ public class MainController {
         return "main";
     }
 
-    /**
-     * レコード保存(Ajax用)
-     * タイマーで計測したレコードを保存
-     */
     @PostMapping("/record_save")
     @ResponseBody
     public Map<String, Object> saveRecord(HttpSession session,
@@ -123,7 +103,6 @@ public class MainController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -138,16 +117,13 @@ public class MainController {
             System.out.println("endTime: " + endTime);
             System.out.println("memo: " + memo);
 
-            // 日時を解析
             LocalDateTime startDateTime = LocalDateTime.parse(startTime);
             LocalDateTime endDateTime = LocalDateTime.parse(endTime);
 
-            // タスクを取得または検索
             TaskEntity task = taskService.getTaskByName(taskName);
             Long taskId;
             
             if (task == null) {
-                // タスクが存在しない場合は新規作成
                 task = taskService.createTask(taskName);
                 taskId = task.getId();
                 System.out.println("新規タスク作成: " + taskName + " (ID: " + taskId + ")");
@@ -156,14 +132,11 @@ public class MainController {
                 System.out.println("既存タスク使用: " + taskName + " (ID: " + taskId + ")");
             }
 
-            // レコードを開始
             RecordEntity record = recordService.startRecord(userId, taskId, memo);
-            
-            // 開始時刻と終了時刻を設定
+
             record.setStartTime(startDateTime);
             record.setEndTime(endDateTime);
-            
-            // レコードを更新（updateRecordメソッドを使用）
+
             RecordEntity savedRecord = recordService.updateRecord(
                 record.getId(),
                 taskId,
@@ -190,9 +163,6 @@ public class MainController {
         return response;
     }
 
-    /**
-     * レコード開始(Ajax用)
-     */
     @PostMapping("/record/start")
     @ResponseBody
     public Map<String, Object> startRecord(HttpSession session,
@@ -201,7 +171,6 @@ public class MainController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -213,7 +182,6 @@ public class MainController {
             System.out.println("userId: " + userId);
             System.out.println("taskId: " + taskId);
 
-            // すでに進行中のレコードがあるかチェック
             RecordEntity activeRecord = recordService.getActiveRecord(userId);
             if (activeRecord != null) {
                 response.put("success", false);
@@ -221,7 +189,6 @@ public class MainController {
                 return response;
             }
 
-            // レコード開始
             RecordEntity record = recordService.startRecord(userId, taskId, memo);
             System.out.println("レコード開始完了: ID=" + record.getId());
 
@@ -240,9 +207,6 @@ public class MainController {
         return response;
     }
 
-    /**
-     * レコード終了(Ajax用)
-     */
     @PostMapping("/record/end")
     @ResponseBody
     public Map<String, Object> endRecord(HttpSession session,
@@ -251,7 +215,6 @@ public class MainController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -280,16 +243,12 @@ public class MainController {
         return response;
     }
 
-    /**
-     * 進行中のレコード情報取得(Ajax用)
-     */
     @GetMapping("/record/active")
     @ResponseBody
     public Map<String, Object> getActiveRecord(HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -321,9 +280,6 @@ public class MainController {
         return response;
     }
 
-    /**
-     * 指定日のスケジュールとレコードを取得(Ajax用)
-     */
     @GetMapping("/day-data")
     @ResponseBody
     public Map<String, Object> getDayData(HttpSession session,
@@ -331,7 +287,6 @@ public class MainController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // ログインチェック
             Long userId = getUserIdAsLong(session);
             if (userId == null) {
                 response.put("success", false);
@@ -356,10 +311,6 @@ public class MainController {
         return response;
     }
 
-    /**
-     * userIdをLongとして取得するヘルパーメソッド
-     * セッションのuserIdをInteger/Long/Stringから統一的にLongに変換
-     */
     private Long getUserIdAsLong(HttpSession session) {
         Object userIdObj = session.getAttribute("userId");
         if (userIdObj == null) {

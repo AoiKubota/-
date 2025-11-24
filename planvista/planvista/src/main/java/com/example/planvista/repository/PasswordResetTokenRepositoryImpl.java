@@ -17,9 +17,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * PasswordResetTokenRepositoryの実装クラス
- */
+
 @Repository
 public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
     

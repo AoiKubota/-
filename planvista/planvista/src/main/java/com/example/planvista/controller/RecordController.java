@@ -9,9 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * RecordController - レコード詳細表示のコントローラー
- */
+
 @Controller
 @RequestMapping("/record")
 public class RecordController {
@@ -19,9 +17,6 @@ public class RecordController {
     @Autowired
     private RecordService recordService;
 
-    /**
-     * レコード詳細取得（Ajax）
-     */
     @GetMapping("/{recordId}")
     @ResponseBody
     public Map<String, Object> getRecord(@PathVariable Long recordId) {
